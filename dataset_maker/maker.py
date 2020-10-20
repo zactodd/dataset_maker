@@ -35,18 +35,17 @@ class SingleSquare(DatasetMaker):
         bboxes = []
         for _ in range(n_samples):
             image = self._BASE_IMAGE.copy()
-            square_width = np.random.randint(self.min_width, self.max_width)
-
-            x0 = np.random.randint(self.width - square_width)
-            y0 = np.random.randint(self.height - square_width)
-            x1 = x0 + square_width
-            y1 = y0 + square_width
-
+            bbox = y0, x0, y1, x1 = self.rand_square()
             image[x0:x1, y0:y1] = (255, 0, 0)
-
             images.append(image)
-            bboxes.append(np.asarray([y0, x0, y1, x1]))
+            bboxes.append(np.asarray(bbox))
         return images, bboxes
+
+    def rand_square(self):
+        square_width = np.random.randint(self.min_width, self.max_width)
+        x0 = np.random.randint(self.width - square_width)
+        y0 = np.random.randint(self.height - square_width)
+        return y0, x0, y0 + square_width, x0 + square_width
 
 
 class MulticlassSingleSquare(SingleSquare):
@@ -62,19 +61,14 @@ class MulticlassSingleSquare(SingleSquare):
         classes = []
         for _ in range(n_samples):
             image = self._BASE_IMAGE.copy()
-            square_width = np.random.randint(self.min_width, self.max_width)
-
-            x0 = np.random.randint(self.width - square_width)
-            y0 = np.random.randint(self.height - square_width)
-            x1 = x0 + square_width
-            y1 = y0 + square_width
+            bbox = y0, x0, y1, x1 = self.rand_square()
 
             colour = np.random.randint(self.n_classes)
             classes.append(colour)
 
             image[x0:x1, y0:y1] = self.colours[colour]
 
-            bboxes.append(np.asarray([y0, x0, y1, x1]))
+            bboxes.append(np.asarray(bbox))
             images.append(image)
         return images, bboxes, classes
 
@@ -100,15 +94,9 @@ class MultipleSquares(SingleSquare):
                 n_examples = np.random.randint(self.min_n_per_image, self.max_n_per_image)
 
             for _ in range(n_examples):
-                square_width = np.random.randint(self.min_width, self.max_width)
-
-                x0 = np.random.randint(self.width - square_width)
-                y0 = np.random.randint(self.height - square_width)
-                x1 = x0 + square_width
-                y1 = y0 + square_width
-
+                bbox = y0, x0, y1, x1 = self.rand_square()
                 image[x0:x1, y0:y1] = (255, 0, 0)
-                image_bboxes.append(np.asarray([y0, x0, y1, x1]))
+                image_bboxes.append(np.asarray(bbox))
             images.append(image)
             bboxes.append(np.asarray(image_bboxes))
         return images, bboxes
@@ -127,7 +115,6 @@ class MulticlassMultipleSquares(MultipleSquares):
         for _ in range(n_samples):
             image = self._BASE_IMAGE.copy()
 
-
             if self.min_n_per_image == self.max_n_per_image:
                 n_examples = self.min_n_per_image
             else:
@@ -136,18 +123,11 @@ class MulticlassMultipleSquares(MultipleSquares):
             image_bboxes = []
             image_classes = []
             for _ in range(n_examples):
-                square_width = np.random.randint(self.min_width, self.max_width)
-
-                x0 = np.random.randint(self.width - square_width)
-                y0 = np.random.randint(self.height - square_width)
-                x1 = x0 + square_width
-                y1 = y0 + square_width
-
+                bbox = y0, x0, y1, x1 = self.rand_square()
                 colour = np.random.randint(self.n_classes)
-
                 image[x0:x1, y0:y1] = self.colours[colour]
 
-                image_bboxes.append(np.asarray([y0, x0, y1, x1]))
+                image_bboxes.append(np.asarray(bbox))
                 image_classes.append(colour)
             images.append(image)
             bboxes.append(np.asarray(image_bboxes))
