@@ -77,3 +77,75 @@ class MulticlassSingleSquareBBoxsDM(SingleSquareBBoxsDM):
             bboxes.append(np.asarray([y0, x0, y1, x1]))
             images.append(image)
         return images, bboxes, classes
+
+
+class MultipleSquareBBoxsDM(SingleSquareBBoxsDM):
+    def __init__(self, min_n_per_image=1, max_n_per_image=3, **kwargs):
+        super().__init__(**kwargs)
+        assert min_n_per_image <= max_n_per_image, \
+            "Min examples per image must be less or equal than the max examples per image"
+        self.min_n_per_image = min_n_per_image
+        self.max_n_per_image = max_n_per_image
+
+    def make(self, n_samples: int):
+        bboxes = []
+        images = []
+        for _ in range(n_samples):
+            image = self._BASE_IMAGE.copy()
+
+            image_bboxes = []
+            if self.min_n_per_image == self.max_n_per_image:
+                n_examples = self.min_n_per_image
+            else:
+                n_examples = np.random.randint(self.min_n_per_image, self.max_n_per_image)
+
+            for _ in range(n_examples):
+                square_width = np.random.randint(self.min_width, self.max_width)
+
+                x0 = np.random.randint(self.width - square_width)
+                y0 = np.random.randint(self.height - square_width)
+                x1 = x0 + square_width
+                y1 = y0 + square_width
+
+                image[x0:x1, y0:y1] = (255, 0, 0)
+                image_bboxes.append(np.asarray([y0, x0, y1, x1]))
+            bboxes.append(np.asarray(image_bboxes))
+            images.append(image)
+        return images, bboxes
+
+
+class MulticlassMultipleSquareBBoxsDM(MultipleSquareBBoxsDM):
+    def __init__(self, n_classes=3, **kwargs):
+        super().__init__(**kwargs)
+        self.n_classes = n_classes
+        self.colours = utils.spec(self.n_classes)
+
+    def make(self, n_samples: int):
+        bboxes = []
+        images = []
+        for _ in range(n_samples):
+            image = self._BASE_IMAGE.copy()
+
+            image_bboxes = []
+            if self.min_n_per_image == self.max_n_per_image:
+                n_examples = self.min_n_per_image
+            else:
+                n_examples = np.random.randint(self.min_n_per_image, self.max_n_per_image)
+
+            for _ in range(n_examples):
+                square_width = np.random.randint(self.min_width, self.max_width)
+
+                x0 = np.random.randint(self.width - square_width)
+                y0 = np.random.randint(self.height - square_width)
+                x1 = x0 + square_width
+                y1 = y0 + square_width
+
+                colour = np.random.randint(self.n_classes)
+
+                image[x0:x1, y0:y1] = self.colours[colour]
+
+                image_bboxes.append(np.asarray([y0, x0, y1, x1]))
+            bboxes.append(np.asarray(image_bboxes))
+            images.append(image)
+        return images, bboxes
+
