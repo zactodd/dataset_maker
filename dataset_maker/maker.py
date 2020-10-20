@@ -12,10 +12,10 @@ class DatasetMaker(ABC):
     @abstractmethod
     def make(self, n_samples: int) -> Any:
         NotImplementedError()
-        return "images", "labels"
+        return
 
 
-class SingleSquareBBoxsDM(DatasetMaker):
+class SingleSquare(DatasetMaker):
     def __init__(self, width=640, height=640, min_width=0, max_width=None):
         super().__init__()
         assert max_width is None or min_width < max_width, \
@@ -31,8 +31,8 @@ class SingleSquareBBoxsDM(DatasetMaker):
         self._BASE_IMAGE = np.zeros((width, height, 3))
 
     def make(self, n_samples: int):
-        bboxes = []
         images = []
+        bboxes = []
         for _ in range(n_samples):
             image = self._BASE_IMAGE.copy()
             square_width = np.random.randint(self.min_width, self.max_width)
@@ -44,12 +44,12 @@ class SingleSquareBBoxsDM(DatasetMaker):
 
             image[x0:x1, y0:y1] = (255, 0, 0)
 
-            bboxes.append(np.asarray([y0, x0, y1, x1]))
             images.append(image)
+            bboxes.append(np.asarray([y0, x0, y1, x1]))
         return images, bboxes
 
 
-class MulticlassSingleSquareBBoxsDM(SingleSquareBBoxsDM):
+class MulticlassSingleSquare(SingleSquare):
     def __init__(self, n_classes=3, **kwargs):
         super().__init__(**kwargs)
 
@@ -57,8 +57,8 @@ class MulticlassSingleSquareBBoxsDM(SingleSquareBBoxsDM):
         self.colours = utils.spec(self.n_classes)
 
     def make(self, n_samples: int):
-        bboxes = []
         images = []
+        bboxes = []
         classes = []
         for _ in range(n_samples):
             image = self._BASE_IMAGE.copy()
@@ -79,7 +79,7 @@ class MulticlassSingleSquareBBoxsDM(SingleSquareBBoxsDM):
         return images, bboxes, classes
 
 
-class MultipleSquareBBoxsDM(SingleSquareBBoxsDM):
+class MultipleSquares(SingleSquare):
     def __init__(self, min_n_per_image=1, max_n_per_image=3, **kwargs):
         super().__init__(**kwargs)
         assert min_n_per_image <= max_n_per_image, \
@@ -88,8 +88,8 @@ class MultipleSquareBBoxsDM(SingleSquareBBoxsDM):
         self.max_n_per_image = max_n_per_image
 
     def make(self, n_samples: int):
-        bboxes = []
         images = []
+        bboxes = []
         for _ in range(n_samples):
             image = self._BASE_IMAGE.copy()
 
@@ -109,29 +109,32 @@ class MultipleSquareBBoxsDM(SingleSquareBBoxsDM):
 
                 image[x0:x1, y0:y1] = (255, 0, 0)
                 image_bboxes.append(np.asarray([y0, x0, y1, x1]))
-            bboxes.append(np.asarray(image_bboxes))
             images.append(image)
+            bboxes.append(np.asarray(image_bboxes))
         return images, bboxes
 
 
-class MulticlassMultipleSquareBBoxsDM(MultipleSquareBBoxsDM):
+class MulticlassMultipleSquares(MultipleSquares):
     def __init__(self, n_classes=3, **kwargs):
         super().__init__(**kwargs)
         self.n_classes = n_classes
         self.colours = utils.spec(self.n_classes)
 
     def make(self, n_samples: int):
-        bboxes = []
         images = []
+        bboxes = []
+        classes = []
         for _ in range(n_samples):
             image = self._BASE_IMAGE.copy()
 
-            image_bboxes = []
+
             if self.min_n_per_image == self.max_n_per_image:
                 n_examples = self.min_n_per_image
             else:
                 n_examples = np.random.randint(self.min_n_per_image, self.max_n_per_image)
 
+            image_bboxes = []
+            image_classes = []
             for _ in range(n_examples):
                 square_width = np.random.randint(self.min_width, self.max_width)
 
@@ -145,7 +148,9 @@ class MulticlassMultipleSquareBBoxsDM(MultipleSquareBBoxsDM):
                 image[x0:x1, y0:y1] = self.colours[colour]
 
                 image_bboxes.append(np.asarray([y0, x0, y1, x1]))
-            bboxes.append(np.asarray(image_bboxes))
+                image_classes.append(colour)
             images.append(image)
-        return images, bboxes
+            bboxes.append(np.asarray(image_bboxes))
+            classes.append(np.asarray(image_classes))
+        return images, bboxes, classes
 
