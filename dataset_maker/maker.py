@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Tuple
 import numpy as np
 import matplotlib.pyplot as plt
+import utils
 
 
 class DatasetMaker(ABC):
@@ -9,7 +10,7 @@ class DatasetMaker(ABC):
         pass
 
     @abstractmethod
-    def make(self, n_samples: int) -> Tuple[Any, Any]:
+    def make(self, n_samples: int) -> Any:
         NotImplementedError()
         return "images", "labels"
 
@@ -36,8 +37,8 @@ class SingleSquareBBoxsDM(DatasetMaker):
             image = self._BASE_IMAGE.copy()
             square_width = np.random.randint(self.min_width, self.max_width)
 
-            x0 = np.random.randint(square_width, self.width - square_width)
-            y0 = np.random.randint(square_width, self.height - square_width)
+            x0 = np.random.randint(self.width - square_width)
+            y0 = np.random.randint(self.height - square_width)
             x1 = x0 + square_width
             y1 = y0 + square_width
 
@@ -48,3 +49,31 @@ class SingleSquareBBoxsDM(DatasetMaker):
         return images, bboxes
 
 
+class MulticlassSingleSquareBBoxsDM(SingleSquareBBoxsDM):
+    def __init__(self, n_classes=3, **kwargs):
+        super().__init__(**kwargs)
+
+        self.n_classes = n_classes
+        self.colours = utils.spec(self.n_classes)
+
+    def make(self, n_samples: int):
+        bboxes = []
+        images = []
+        classes = []
+        for _ in range(n_samples):
+            image = self._BASE_IMAGE.copy()
+            square_width = np.random.randint(self.min_width, self.max_width)
+
+            x0 = np.random.randint(self.width - square_width)
+            y0 = np.random.randint(self.height - square_width)
+            x1 = x0 + square_width
+            y1 = y0 + square_width
+
+            colour = np.random.randint(self.n_classes)
+            classes.append(colour)
+
+            image[x0:x1, y0:y1] = self.colours[colour]
+
+            bboxes.append(np.asarray([y0, x0, y1, x1]))
+            images.append(image)
+        return images, bboxes, classes
