@@ -75,7 +75,7 @@ class PascalVOC:
             classes.append(np.asarray(classes_per))
         return names, images, bboxes, classes
 
-    def download(self, download_path, image_names, images, bboxes, classes) -> Any:
+    def download(self, download_path, image_names, images, bboxes, classes):
         folder = re.split("/|\\\\", download_path)[-1]
         for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
             w, h, d = image.shape
@@ -89,11 +89,11 @@ class PascalVOC:
             ElementTree.SubElement(size, "height").text = str(h)
             ElementTree.SubElement(size, "depth").text = str(d)
 
-            for bbox, c in zip(bboxes_per, classes_per):
+            for bbox, cls in zip(bboxes_per, classes_per):
                 y0, x0, y1, x1 = bbox
 
                 obj = ElementTree.SubElement(root, "object")
-                ElementTree.SubElement(obj, "name").text = str(c)
+                ElementTree.SubElement(obj, "name").text = str(cls)
 
                 bb_elm = ElementTree.SubElement(obj, "bndbox")
                 ElementTree.SubElement(bb_elm, "xmin").text = str(x0)
@@ -117,11 +117,18 @@ class COCO:
 
 @Annotation.register
 class YOLO:
-    def load(self, image_dir: str, annotations_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        return
-
-    def download(self, images: np.ndarray, bboxes: np.ndarray, classes: np.ndarray) -> Any:
-        return
+    def load(self, image_dir, annotations_dir) -> Tuple[list, list, list, list]:
+        pass
+                    
+    def download(self, download_path, image_names, images, bboxes, classes):
+        classes_dict = {n: i for i, n in enumerate({cls for classes_per in classes for cls in classes_per})}
+        for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
+            save_name = reduce(lambda n, fmt: n.strip(fmt), IMAGE_FORMATS, name)
+            with open(f"{download_path}/{save_name}.txt", "w") as f:
+                w, h, d = image.shape
+                for bbox, c in zip(bboxes_per, classes_per):
+                    y0, x0, y1, x1 = bbox
+                    f.write(f"{classes_dict[c]} {x0 / w} {y0 / h} {(x1 - x0) / w} {(y1 - y0) / h}")
 
 
 @Annotation.register
