@@ -3,8 +3,10 @@ from abc import ABC, abstractmethod
 from typing import Tuple, Dict, Any
 import numpy as np
 from xml.etree import ElementTree
+import matplotlib.pyplot as plt
 from functools import reduce
 import re
+import os
 
 
 IMAGE_FORMATS = (".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG")
@@ -34,11 +36,6 @@ class Annotation(ABC):
         pass
 
 
-# def convert_annotation(images_dir: str, annotation_file: str, in_format:str , out_format: str) -> Any:
-#     in_ann = AnnotationFormats().get(in_format)
-#     out_format = AnnotationFormats().get(out_format)
-#     return out_format.download(*in_ann.load(images_dir, annotation_file))
-
 
 @Annotation.register
 class VGG:
@@ -49,11 +46,34 @@ class VGG:
         return
 
 
+@strategy_method(AnnotationFormats)
 @Annotation.register
 class PascalVOC:
-    def load(self, image_dir: str, annotations_file: str, load_only_annotated=True) -> \
-            Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        return
+    def load(self, image_dir: str, annotations_dir) -> Tuple[list, list, list, list]:
+        annotation_files = [f for f in os.listdir(annotations_dir) if f.endswith(".xml")]
+        names = []
+        images = []
+        bboxes = []
+        classes = []
+        for f in annotation_files:
+            root = ElementTree.parse(f)
+            name = root.find("file").text
+            names.append(name)
+            images.append(plt.imread(f"{image_dir}/{name}"))
+
+            bboxes_per = []
+            classes_per = []
+            for obj in root.findall("object"):
+                bbox = obj.find("bndbox")
+                y0 = int(bbox.find("ymin").text)
+                x0 = int(bbox.find("xmin").text)
+                y1 = int(bbox.find("ymax").text)
+                x1 = int(bbox.find("xmax").text)
+                bboxes_per.append(np.asarray([y0, x0, y1, x1]))
+                classes_per.append(obj.find("name").text)
+            bboxes.append(np.asarray(bboxes_per))
+            classes.append(np.asarray(classes_per))
+        return names, images, bboxes, classes
 
     def download(self, download_path, image_names, images, bboxes, classes) -> Any:
         folder = re.split("/|\\\\", download_path)[-1]
