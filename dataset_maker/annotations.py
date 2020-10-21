@@ -31,3 +31,43 @@ def convert_annotation(images_dir: str, annotation_file: str, in_format:str , ou
     in_ann = AnnotationFormats().get(in_format)
     out_format = AnnotationFormats().get(out_format)
     return out_format.download(*in_ann.load(images_dir, annotation_file))
+
+
+class VGG(Annotation):
+    def load(self, image_dir: str, annotations_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        return
+
+    def download(self, images: np.ndarray, bboxes: np.ndarray, classes: np.ndarray) -> Any:
+        return
+
+
+class PascalVOC(Annotation):
+    def load(self, image_dir: str, annotations_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        return
+
+    def download(self, images: np.ndarray, bboxes: np.ndarray, classes: np.ndarray) -> Any:
+        return
+
+
+class COCO(Annotation):
+    def load(self, image_dir: str, annotations_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        return
+
+    def download(self, images: np.ndarray, bboxes: np.ndarray, classes: np.ndarray) -> Any:
+        return
+
+
+class YOLO(Annotation):
+    def load(self, image_dir: str, annotations_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        return
+
+    def download(self, images: np.ndarray, bboxes: np.ndarray, classes: np.ndarray) -> Any:
+        return
+
+
+class TFRecord(Annotation):
+    def load(self, image_dir: str, annotations_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        return
+
+    def download(self, images: np.ndarray, bboxes: np.ndarray, classes: np.ndarray) -> Any:
+        return
