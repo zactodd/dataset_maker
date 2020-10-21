@@ -1,6 +1,6 @@
 from patterns import SingletonStrategies, strategy_method
 from abc import ABC, abstractmethod
-from typing import Tuple, Any
+from typing import Tuple, Dict, Any
 import numpy as np
 
 
@@ -17,14 +17,15 @@ class Annotation(ABC):
         pass
 
     @abstractmethod
-    def load(self, image_dir: str, annotations_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        NotImplementedError()
-        return
+    def load(self, image_dir: str, annotations_file: str) -> Dict:
+        """
+        Loads in images and annotation files and obtaines relivent adata and puts it in an np array.
+        """
+        pass
 
     @abstractmethod
     def download(self, images: np.ndarray, bboxes: np.ndarray, classes: np.ndarray) -> Any:
-        NotImplementedError()
-        return
+        pass
 
 
 def convert_annotation(images_dir: str, annotation_file: str, in_format:str , out_format: str) -> Any:
@@ -33,7 +34,8 @@ def convert_annotation(images_dir: str, annotation_file: str, in_format:str , ou
     return out_format.download(*in_ann.load(images_dir, annotation_file))
 
 
-class VGG(Annotation):
+@Annotation.register
+class VGG:
     def load(self, image_dir: str, annotations_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         return
 
@@ -41,7 +43,8 @@ class VGG(Annotation):
         return
 
 
-class PascalVOC(Annotation):
+@Annotation.register
+class PascalVOC:
     def load(self, image_dir: str, annotations_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         return
 
@@ -49,7 +52,8 @@ class PascalVOC(Annotation):
         return
 
 
-class COCO(Annotation):
+@Annotation.register
+class COCO:
     def load(self, image_dir: str, annotations_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         return
 
@@ -57,7 +61,8 @@ class COCO(Annotation):
         return
 
 
-class YOLO(Annotation):
+@Annotation.register
+class YOLO:
     def load(self, image_dir: str, annotations_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         return
 
@@ -65,7 +70,8 @@ class YOLO(Annotation):
         return
 
 
-class TFRecord(Annotation):
+@Annotation.register
+class TFRecord:
     def load(self, image_dir: str, annotations_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         return
 
