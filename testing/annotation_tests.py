@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-class TestAnnotationTranslation:
+class TestAnnotation:
     def setUp(self):
         dm = maker.MulticlassMultipleSquares(min_width=50, max_width=100)
         self.images, self.bboxes, self.classes = dm.make(10)
@@ -18,7 +18,7 @@ class TestAnnotationTranslation:
             for name, image in zip(self.names, self.images):
                 plt.imsave(f"{td}/{name}", image)
 
-            self.anno_download().download(td, self.names, self.images, self.bboxes, self.classes)
+            self.anno_load().download(td, self.names, self.images, self.bboxes, self.classes)
 
             self.dl_names, self.dl_images, self.dl_bboxes, self.dl_classes = self.anno_load().load(td, td)
             self.dl_names_dict = {n: d for n, *d in zip(self.dl_names, self.dl_images, self.dl_bboxes, self.dl_classes)}
@@ -27,11 +27,9 @@ class TestAnnotationTranslation:
     def anno_load(self):
         return None
 
-    @abstractmethod
-    def anno_download(self):
-        return None
-
     def test_same_names(self):
+        print(self.names)
+        print(self.dl_names)
         self.assertEqual(set(self.names), set(self.dl_names))
 
     def test_same_bboxes(self):
@@ -42,74 +40,65 @@ class TestAnnotationTranslation:
             self.assertTrue(np.all(diff <= 1), msg=f"The bboxs differ by more than one pixel. \n{bbox}\n{dl_bbox}")
 
 
-class TestAnnotationSelfTranslation(TestAnnotationTranslation):
-    @abstractmethod
-    def anno_load(self):
-        return None
-
-    def anno_download(self):
-        return self.anno_load()
-
-
-class TestPascalVOC(TestAnnotationSelfTranslation, unittest.TestCase):
+class TestPascalVOC(TestAnnotation, unittest.TestCase):
     def anno_load(self):
         return anno.PascalVOC()
 
 
-class TestVGG(TestAnnotationSelfTranslation, unittest.TestCase):
+class TestVGG(TestAnnotation, unittest.TestCase):
     def anno_load(self):
         return anno.VGG()
 
 
-class TestYOLO(TestAnnotationSelfTranslation, unittest.TestCase):
+class TestYOLO(TestAnnotation, unittest.TestCase):
     def anno_load(self):
         return anno.YOLO()
-
-
-class TestPascalVOCToYOLO(TestAnnotationTranslation, unittest.TestCase):
-    def anno_load(self):
-        return anno.PascalVOC()
-
-    def anno_download(self):
-        return anno.YOLO()
-
-
-class TestPascalVOCToVGG(TestAnnotationTranslation, unittest.TestCase):
-    def anno_load(self):
-        return anno.PascalVOC()
-
-    def anno_download(self):
-        return anno.VGG()
-
-
-class TestYOLOToPascalVOC(TestAnnotationTranslation, unittest.TestCase):
-    def anno_load(self):
-        return anno.YOLO()
-
-    def anno_download(self):
-        return anno.PascalVOC()
-
-
-class TestYOLOToVGG(TestAnnotationTranslation, unittest.TestCase):
-    def anno_load(self):
-        return anno.YOLO()
-
-    def anno_download(self):
-        return anno.VGG()
-
-
-class TestVGGToYOLO(TestAnnotationTranslation, unittest.TestCase):
-    def anno_load(self):
-        return anno.VGG()
-
-    def anno_download(self):
-        return anno.YOLO()
-
-
-class TestVGGToPascalVOC(TestAnnotationTranslation, unittest.TestCase):
-    def anno_load(self):
-        return anno.VGG()
-
-    def anno_download(self):
-        return anno.PascalVOC()
+#
+#
+# class TestPascalVOCToYOLO(TestAnnotationTranslation, unittest.TestCase):
+#     def anno_load(self):
+#         return anno.PascalVOC()
+#
+#     def anno_download(self):
+#         return anno.YOLO()
+#
+#
+# class TestPascalVOCToVGG(TestAnnotationTranslation, unittest.TestCase):
+#     def anno_load(self):
+#         return anno.PascalVOC()
+#
+#     def anno_download(self):
+#         return anno.VGG()
+#
+#
+# class TestYOLOToPascalVOC(TestAnnotationTranslation, unittest.TestCase):
+#     def anno_load(self):
+#         return anno.YOLO()
+#
+#     def anno_download(self):
+#         return anno.PascalVOC()
+#
+#
+# class TestYOLOToVGG(TestAnnotationTranslation, unittest.TestCase):
+#     def anno_load(self):
+#         return anno.YOLO()
+#
+#     def anno_download(self):
+#         return anno.VGG()
+#
+#
+# class TestVGGToYOLO(TestAnnotationTranslation, unittest.TestCase):
+#     def anno_load(self):
+#         return anno.VGG()
+#
+#     def anno_download(self):
+#         return anno.YOLO()
+#
+#
+# class TestVGGToPascalVOC(TestAnnotationTranslation, unittest.TestCase):
+#     def anno_load(self):
+#         return anno.VGG()
+#
+#     def anno_download(self):
+#         return anno.PascalVOC()
 
