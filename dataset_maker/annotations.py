@@ -32,7 +32,7 @@ class Annotation(ABC):
         pass
 
     @abstractmethod
-    def download(self, images: np.ndarray, bboxes: np.ndarray, classes: np.ndarray) -> Any:
+    def download(self, download_path, image_names, images, bboxes, classes) -> None:
         pass
 
 
@@ -56,11 +56,10 @@ class PascalVOC:
         bboxes = []
         classes = []
         for f in annotation_files:
-            root = ElementTree.parse(f)
+            root = ElementTree.parse(f"{annotations_dir}/{f}")
             name = root.find("file").text
             names.append(name)
             images.append(plt.imread(f"{image_dir}/{name}"))
-
             bboxes_per = []
             classes_per = []
             for obj in root.findall("object"):
