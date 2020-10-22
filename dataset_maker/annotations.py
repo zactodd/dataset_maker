@@ -137,6 +137,10 @@ class PascalVOC:
             for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
                 obj = ElementTree.SubElement(root, "object")
                 ElementTree.SubElement(obj, "name").text = str(cls)
+                
+                ElementTree.SubElement(obj, "pose").text = "Unspecified"
+                ElementTree.SubElement(obj, "truncated").text = "Unspecified"
+                ElementTree.SubElement(obj, "difficult").text = "Unspecified"
 
                 bb_elm = ElementTree.SubElement(obj, "bndbox")
                 ElementTree.SubElement(bb_elm, "xmin").text = str(x0)
