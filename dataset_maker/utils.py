@@ -25,3 +25,8 @@ def bbox(x: Iterable[int], y: Iterable[int], out_format: str = "2p") -> Tuple[in
         return y0, x0, y1 - y0, x1 - x0
     else:
         NotImplementedError()
+
+
+def bbox_area(y0, x0, y1, x1):
+    return (y1 - y0) * (x1 - x0)
+
