@@ -89,9 +89,7 @@ class PascalVOC:
             ElementTree.SubElement(size, "height").text = str(h)
             ElementTree.SubElement(size, "depth").text = str(d)
 
-            for bbox, cls in zip(bboxes_per, classes_per):
-                y0, x0, y1, x1 = bbox
-
+            for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
                 obj = ElementTree.SubElement(root, "object")
                 ElementTree.SubElement(obj, "name").text = str(cls)
 
@@ -118,16 +116,36 @@ class COCO:
 @Annotation.register
 class YOLO:
     def load(self, image_dir, annotations_dir) -> Tuple[list, list, list, list]:
+        # annotation_files = [f for f in os.listdir(annotations_dir) if f.endswith(".text")]
+        # names = []
+        # images = []
+        # bboxes = []
+        # classes = []
+        # for file in annotation_files:
+        #     with open(file, "r") as f:
+        #         name = file.strip(".txt")
+        #         names.append(name)
+        #
+        #         w, h, _ = ...
+        #         bboxes_per = []
+        #         classes_per = []
+        #         for line in f.readlines():
+        #             cls, x0, y0, dx, dy = line.split()
+        #             x0, y0, dx, dy = float(x0), float(y0), float(dx), float(dy)
+        #             bboxes_per.append(np.asarray([x0 * w, y0 * h, (x0 + dx) * w, (y0 + dy) * h], dtype="int32"))
+        #             classes_per.append(cls)
+        #         bboxes.append(np.asarray(bboxes_per))
+        #         classes.append(np.asarray(classes_per))
+        # return names, images, bboxes, classes
         pass
-                    
+
     def download(self, download_path, image_names, images, bboxes, classes):
         classes_dict = {n: i for i, n in enumerate({cls for classes_per in classes for cls in classes_per})}
         for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
             save_name = reduce(lambda n, fmt: n.strip(fmt), IMAGE_FORMATS, name)
             with open(f"{download_path}/{save_name}.txt", "w") as f:
                 w, h, d = image.shape
-                for bbox, c in zip(bboxes_per, classes_per):
-                    y0, x0, y1, x1 = bbox
+                for (y0, x0, y1, x1), c in zip(bboxes_per, classes_per):
                     f.write(f"{classes_dict[c]} {x0 / w} {y0 / h} {(x1 - x0) / w} {(y1 - y0) / h}")
 
 
