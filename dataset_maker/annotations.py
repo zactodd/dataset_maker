@@ -116,28 +116,43 @@ class COCO:
 @Annotation.register
 class YOLO:
     def load(self, image_dir, annotations_dir) -> Tuple[list, list, list, list]:
-        # annotation_files = [f for f in os.listdir(annotations_dir) if f.endswith(".text")]
-        # names = []
-        # images = []
-        # bboxes = []
-        # classes = []
-        # for file in annotation_files:
-        #     with open(file, "r") as f:
-        #         name = file.strip(".txt")
-        #         names.append(name)
-        #
-        #         w, h, _ = ...
-        #         bboxes_per = []
-        #         classes_per = []
-        #         for line in f.readlines():
-        #             cls, x0, y0, dx, dy = line.split()
-        #             x0, y0, dx, dy = float(x0), float(y0), float(dx), float(dy)
-        #             bboxes_per.append(np.asarray([x0 * w, y0 * h, (x0 + dx) * w, (y0 + dy) * h], dtype="int32"))
-        #             classes_per.append(cls)
-        #         bboxes.append(np.asarray(bboxes_per))
-        #         classes.append(np.asarray(classes_per))
-        # return names, images, bboxes, classes
-        pass
+        annotation_files = [f for f in os.listdir(annotations_dir) if f.endswith(".txt")]
+        names = []
+        images = []
+        bboxes = []
+        classes = []
+        for file in annotation_files:
+            file_path = f"{annotations_dir}/{file}"
+            with open(file_path, "r") as f:
+                potential_images = []
+                for fmt in IMAGE_FORMATS:
+                    image_path = f"{image_dir}/{file.strip('.txt')}{fmt}"
+                    if os.path.exists(image_path):
+                        potential_images.append(image_path)
+
+                assert len(potential_images) != 0, \
+                    f"Theres is no image file in {image_dir} corresponding to the YOLO file {file_path}."
+                assert len(potential_images) == 1, \
+                    f"Theres are too many image file in {image_dir} corresponding to the YOLO file {file_path}."
+
+                image_path = potential_images[0]
+                name = re.split("/|\\\\", image_path)[-1]
+                names.append(name)
+
+                image = plt.imread(image_path)
+                images.append(images)
+                w, h, _ = image.shape
+
+                bboxes_per = []
+                classes_per = []
+                for line in f.readlines():
+                    cls, x0, y0, dx, dy = line.split()
+                    x0, y0, dx, dy = float(x0), float(y0), float(dx), float(dy)
+                    bboxes_per.append(np.asarray([y0 * h, x0 * w,  (y0 + dy) * h, (x0 + dx) * w], dtype="int32"))
+                    classes_per.append(cls)
+                bboxes.append(np.asarray(bboxes_per))
+                classes.append(np.asarray(classes_per))
+        return names, images, bboxes, classes
 
     def download(self, download_path, image_names, images, bboxes, classes):
         classes_dict = {n: i for i, n in enumerate({cls for classes_per in classes for cls in classes_per})}
@@ -146,7 +161,7 @@ class YOLO:
             with open(f"{download_path}/{save_name}.txt", "w") as f:
                 w, h, d = image.shape
                 for (y0, x0, y1, x1), c in zip(bboxes_per, classes_per):
-                    f.write(f"{classes_dict[c]} {x0 / w} {y0 / h} {(x1 - x0) / w} {(y1 - y0) / h}")
+                    f.write(f"{classes_dict[c]} {x0 / w} {y0 / h} {(x1 - x0) / w} {(y1 - y0) / h}\n")
 
 
 @Annotation.register
