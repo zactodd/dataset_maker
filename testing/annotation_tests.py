@@ -56,6 +56,11 @@ class TestPascalVOC(TestAnnotationSelfTranslation, unittest.TestCase):
         return anno.PascalVOC()
 
 
+class TestVGG(TestAnnotationSelfTranslation, unittest.TestCase):
+    def anno_load(self):
+        return anno.VGG()
+
+
 class TestYOLO(TestAnnotationSelfTranslation, unittest.TestCase):
     def anno_load(self):
         return anno.YOLO()
@@ -69,9 +74,42 @@ class TestPascalVOCToYOLO(TestAnnotationTranslation, unittest.TestCase):
         return anno.YOLO()
 
 
+class TestPascalVOCToVGG(TestAnnotationTranslation, unittest.TestCase):
+    def anno_load(self):
+        return anno.PascalVOC()
+
+    def anno_download(self):
+        return anno.VGG()
+
+
 class TestYOLOToPascalVOC(TestAnnotationTranslation, unittest.TestCase):
     def anno_load(self):
         return anno.YOLO()
 
     def anno_download(self):
         return anno.PascalVOC()
+
+
+class TestYOLOToVGG(TestAnnotationTranslation, unittest.TestCase):
+    def anno_load(self):
+        return anno.YOLO()
+
+    def anno_download(self):
+        return anno.VGG()
+
+
+class TestVGGToYOLO(TestAnnotationTranslation, unittest.TestCase):
+    def anno_load(self):
+        return anno.VGG()
+
+    def anno_download(self):
+        return anno.YOLO()
+
+
+class TestVGGToPascalVOC(TestAnnotationTranslation, unittest.TestCase):
+    def anno_load(self):
+        return anno.VGG()
+
+    def anno_download(self):
+        return anno.PascalVOC()
+
