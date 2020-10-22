@@ -38,7 +38,8 @@ class TestAnnotationTranslation:
         for n in self.names:
             bbox = self.names_dict[n][1]
             dl_bbox = self.dl_names_dict[n][1]
-            np.testing.assert_equal(bbox, dl_bbox)
+            diff = np.abs(bbox - dl_bbox)
+            self.assertTrue(np.all(diff <= 1), msg=f"The bboxs differ by more than one pixel. \n{bbox}\n{dl_bbox}")
 
 
 class TestAnnotationSelfTranslation(TestAnnotationTranslation):
