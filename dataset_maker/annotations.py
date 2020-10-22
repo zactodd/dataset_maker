@@ -88,7 +88,7 @@ class VGG:
             }
             for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes)
         }
-        with open(f"{download_path}/annotations.json", "w") as f:
+        with open(f"{download_path}/vgg_annotations.json", "w") as f:
             json.dump(annotations, f)
 
 
@@ -151,11 +151,56 @@ class PascalVOC:
 
 @Annotation.register
 class COCO:
-    def load(self, image_dir: str, annotations_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        return
+    def load(self, image_dir: str, annotations_dir: str):
+        # if annotations_dir.endswith(".json"):
+        #     annotations_file = annotations_dir
+        # else:
+        #     potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".json")]
+        #     assert len(potential_annotations) != 0, \
+        #         f"Theres is no annotations .json file in {annotations_dir}."
+        #     assert len(potential_annotations) == 1, \
+        #         f"Theres are too many annotations .json files in {annotations_dir}."
+        #     annotations_file = potential_annotations[0]
+        # with open(f"{annotations_dir}/{annotations_file}", "r") as f:
+        #     annotations = json.load(f)
+        #
+        # names = []
+        # images = []
+        # bboxes = []
+        # classes = []
+        #
+        # for filename, annotation in annotations.items():
+        pass
 
-    def download(self, images: np.ndarray, bboxes: np.ndarray, classes: np.ndarray) -> Any:
-        return
+
+    def download(self, download_path, image_names, images, bboxes, classes) -> None:
+        classes_dict = {n: i for i, n in enumerate({cls for classes_per in classes for cls in classes_per}, 1)}
+        annotation_idx = 0
+        images_info = []
+        annotations_info = []
+        for img_idx, (name, image, bboxes_per, classes_per) in enumerate(zip(image_names, images, bboxes, classes), 1):
+            w, h, _ = image.shape
+            images_info.append({"id": img_idx, "filename": name, "width": int(w), "height": int(h)})
+            for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
+                bbox = [float(x0), float(y0), float(x1), float(y1)]
+                annotations_info.append({
+                    "id": annotation_idx,
+                    "image_id": img_idx,
+                    "category": classes_dict[cls],
+                    "iscrowd": 0,
+                    "segmentation": [bbox],
+                    "bbox": bbox,
+                    "area": float(utils.bbox_area(y0, x0, y1, x1))
+                })
+                annotation_idx += 1
+
+        data = {
+            "images": images_info,
+            "annotations": annotations_info,
+            "categories": [{"id": cat_idx, "name": cls} for cls, cat_idx in classes_dict.values()]
+        }
+        with open(f"{download_path}/coco_annotations.json", "w") as f:
+            json.dump(data, f)
 
 
 @Annotation.register
