@@ -5,9 +5,10 @@ import numpy as np
 from xml.etree import ElementTree
 import matplotlib.pyplot as plt
 from functools import reduce
+import utils
+import json
 import re
 import os
-
 
 IMAGE_FORMATS = (".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG")
 
@@ -36,14 +37,59 @@ class Annotation(ABC):
         pass
 
 
-
 @Annotation.register
 class VGG:
-    def load(self, image_dir: str, annotations_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        return
+    def load(self, image_dir: str, annotations_dir: str):
+        if annotations_dir.endswith(".json"):
+            annotations_file = annotations_dir
+        else:
+            potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".json")]
+            assert len(potential_annotations) != 0, \
+                f"Theres is no annotations .json file in {annotations_dir}."
+            assert len(potential_annotations) == 1, \
+                f"Theres are too many annotations .json files in {annotations_dir}."
+            annotations_file = potential_annotations[0]
+        with open(f"{annotations_dir}/{annotations_file}", "r") as f:
+            annotations = json.load(f)
 
-    def download(self, images: np.ndarray, bboxes: np.ndarray, classes: np.ndarray) -> Any:
-        return
+        names = []
+        images = []
+        bboxes = []
+        classes = []
+        for filename, annotation in annotations.items():
+            names.append(filename)
+            images.append(plt.imread(f"{image_dir}/{filename}"))
+
+            bboxes_per = []
+            classes_per = []
+            for r in annotation["regions"].values():
+                bbox = utils.bbox(r["shape_attributes"]["all_points_x"], r["shape_attributes"]["all_points_y"])
+                bboxes_per.append(np.asarray(bbox))
+                classes_per.append(r["region_attributes"]["label"])
+            bboxes.append(np.asarray(bboxes_per))
+            classes.append(np.asarray(classes_per))
+        return names, images, bboxes, classes
+
+    def download(self, download_path, image_names, images, bboxes, classes) -> None:
+        annotations = {
+            name: {
+                "filename": name,
+                "regions": {
+                    str(i): {
+                        "shape_attributes": {
+                            "name": "polygon",
+                            "all_points_x": [int(x0), int(x1), int(x1), int(x0)],
+                            "all_points_y": [int(y0), int(y0), int(y1), int(y1)]
+                        },
+                        "region_attributes": {"label": str(cls)}
+                    }
+                    for i, ((y0, x0, y1, x1), cls) in enumerate(zip(bboxes_per, classes_per))
+                }
+            }
+            for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes)
+        }
+        with open(f"{download_path}/annotations.json", "w") as f:
+            json.dump(annotations, f)
 
 
 @strategy_method(AnnotationFormats)
@@ -147,7 +193,7 @@ class YOLO:
                 for line in f.readlines():
                     cls, x0, y0, dx, dy = line.split()
                     x0, y0, dx, dy = float(x0), float(y0), float(dx), float(dy)
-                    bboxes_per.append(np.asarray([y0 * h, x0 * w,  (y0 + dy) * h, (x0 + dx) * w], dtype="int32"))
+                    bboxes_per.append(np.asarray([y0 * h, x0 * w, (y0 + dy) * h, (x0 + dx) * w], dtype="int32"))
                     classes_per.append(cls)
                 bboxes.append(np.asarray(bboxes_per))
                 classes.append(np.asarray(classes_per))
