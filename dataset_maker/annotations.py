@@ -172,7 +172,6 @@ class COCO:
         # for filename, annotation in annotations.items():
         pass
 
-
     def download(self, download_path, image_names, images, bboxes, classes) -> None:
         classes_dict = {n: i for i, n in enumerate({cls for classes_per in classes for cls in classes_per}, 1)}
         annotation_idx = 0
@@ -252,12 +251,3 @@ class YOLO:
                 w, h, d = image.shape
                 for (y0, x0, y1, x1), c in zip(bboxes_per, classes_per):
                     f.write(f"{classes_dict[c]} {x0 / w} {y0 / h} {(x1 - x0) / w} {(y1 - y0) / h}\n")
-
-
-@Annotation.register
-class TFRecord:
-    def load(self, image_dir: str, annotations_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        return
-
-    def download(self, images: np.ndarray, bboxes: np.ndarray, classes: np.ndarray) -> Any:
-        return
