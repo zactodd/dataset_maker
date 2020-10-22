@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-class TestAnnotationBBox:
+class TestAnnotationTranslation:
     def setUp(self):
         dm = maker.MulticlassMultipleSquares(min_width=50, max_width=100)
         self.images, self.bboxes, self.classes = dm.make(10)
@@ -18,13 +18,17 @@ class TestAnnotationBBox:
             for name, image in zip(self.names, self.images):
                 plt.imsave(f"{td}/{name}", image)
 
-            self.annotation_cls.download(td, self.names, self.images, self.bboxes, self.classes)
+            self.anno_download().download(td, self.names, self.images, self.bboxes, self.classes)
 
-            self.dl_names, self.dl_images, self.dl_bboxes, self.dl_classes = self.annotation_cls.load(td, td)
+            self.dl_names, self.dl_images, self.dl_bboxes, self.dl_classes = self.anno_load().load(td, td)
             self.dl_names_dict = {n: d for n, *d in zip(self.dl_names, self.dl_images, self.dl_bboxes, self.dl_classes)}
 
     @abstractmethod
-    def annotation_cls(self):
+    def anno_load(self):
+        return None
+
+    @abstractmethod
+    def anno_download(self):
         return None
 
     def test_same_names(self):
@@ -37,13 +41,36 @@ class TestAnnotationBBox:
             np.testing.assert_equal(bbox, dl_bbox)
 
 
-class TestPascalVOC(TestAnnotationBBox, unittest.TestCase):
-    @property
-    def annotation_cls(self):
+class TestAnnotationSelfTranslation(TestAnnotationTranslation):
+    @abstractmethod
+    def anno_load(self):
+        return None
+
+    def anno_download(self):
+        return self.anno_load()
+
+
+class TestPascalVOC(TestAnnotationSelfTranslation, unittest.TestCase):
+    def anno_load(self):
         return anno.PascalVOC()
 
 
-class TestYOLO(TestAnnotationBBox, unittest.TestCase):
-    @property
-    def annotation_cls(self):
+class TestYOLO(TestAnnotationSelfTranslation, unittest.TestCase):
+    def anno_load(self):
         return anno.YOLO()
+
+
+class TestPascalVOCToYOLO(TestAnnotationTranslation, unittest.TestCase):
+    def anno_load(self):
+        return anno.PascalVOC()
+
+    def anno_download(self):
+        return anno.YOLO()
+
+
+class TestYOLOToPascalVOC(TestAnnotationTranslation, unittest.TestCase):
+    def anno_load(self):
+        return anno.YOLO()
+
+    def anno_download(self):
+        return anno.PascalVOC()
