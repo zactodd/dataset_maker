@@ -481,7 +481,8 @@ class YOLO:
                 bboxes_per = []
                 classes_per = []
                 for line in f.readlines():
-                    cls, x0, y0, dx, dy = line.split()
+                    cls, *bbox = line.split()
+                    x0, y0, dx, dy = [float(p) for p in bbox]
                     bboxes_per.append(np.asarray([y0 * h, x0 * w, (y0 + dy) * h, (x0 + dx) * w], dtype="int64"))
                     classes_per.append(cls)
                 bboxes.append(np.asarray(bboxes_per))
@@ -574,7 +575,6 @@ class OIDv4:
                 bboxes_per = []
                 classes_per = []
                 for line in f.readlines():
-                    print(line)
                     cls, x0, y0, x1, y1 = line.split()
                     bboxes_per.append(np.asarray([y0, x0, y1, x1], dtype="int64"))
                     classes_per.append(cls)
@@ -610,6 +610,8 @@ class OIDv4:
                 f.writelines(f"{cls} {x0} {y0} {x1} {y1}\n" for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per))
 
 
+@strategy_method(LocalisationAnnotationFormats)
+@LocalisationAnnotation.register
 class TensorflowObjectDetectionCSV(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading Tensorflow Object Detection CSV annotations.
