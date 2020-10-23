@@ -36,7 +36,7 @@ class LocalisationAnnotation(ABC):
 
     @abstractmethod
     @staticmethod
-    def download(download_path, image_names, images, bboxes, classes) -> None:
+    def download(download_dir, image_names, images, bboxes, classes) -> None:
         pass
 
 
@@ -127,11 +127,11 @@ class VGG:
         return names, images, bboxes, classes
 
     @staticmethod
-    def download(download_path: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
                  classes:  List[np.ndarray]) -> None:
         """
-        Downloads a VGG json file to the :param download_path with the filename annotations.
-        :param download_path: THe path where the annotations file is being downloaded.
+        Downloads a VGG json file to the :param download_dir with the filename annotations.
+        :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
         :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
@@ -165,7 +165,7 @@ class VGG:
             }
             for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes)
         }
-        with open(f"{download_path}/vgg_annotations.json", "w") as f:
+        with open(f"{download_dir}/vgg_annotations.json", "w") as f:
             json.dump(annotations, f)
 
 
@@ -235,11 +235,11 @@ class PascalVOC:
         return names, images, bboxes, classes
 
     @staticmethod
-    def download(download_path: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
                  classes:  List[np.ndarray]) -> None:
         """
-        Downloads a Pascal VOC xml files to the :param download_path with the filename annotations.
-        :param download_path: THe path where the annotations file is being downloaded.
+        Downloads a Pascal VOC xml files to the :param download_dir with the filename annotations.
+        :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
         :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
@@ -256,7 +256,7 @@ class PascalVOC:
             f"len(bboxes): {len(bboxes)}\n" \
             f"len(classes): {len(classes)}"
 
-        folder = re.split("/|\\\\", download_path)[-1]
+        folder = re.split("/|\\\\", download_dir)[-1]
         for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
             w, h, d = image.shape
 
@@ -284,7 +284,7 @@ class PascalVOC:
                 ElementTree.SubElement(bb_elm, "ymax").text = str(y1)
 
             save_name = reduce(lambda n, fmt: n.strip(fmt), IMAGE_FORMATS, name)
-            with open(f"{download_path}/{save_name}.xml", "wb") as f:
+            with open(f"{download_dir}/{save_name}.xml", "wb") as f:
                 f.write(ElementTree.tostring(root))
 
 
@@ -376,11 +376,11 @@ class COCO:
         return names, images, bboxes, classes
 
     @staticmethod
-    def download(download_path: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
                  classes: List[np.ndarray]) -> None:
         """
-        Downloads a COCO json file to the :param download_path with the filename annotations.
-        :param download_path: THe path where the annotations file is being downloaded.
+        Downloads a COCO json file to the :param download_dir with the filename annotations.
+        :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
         :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
@@ -422,7 +422,7 @@ class COCO:
             "annotations": annotations_info,
             "categories": [{"id": cat_idx, "name": str(cls)} for cls, cat_idx in classes_dict.items()]
         }
-        with open(f"{download_path}/coco_annotations.json", "w") as f:
+        with open(f"{download_dir}/coco_annotations.json", "w") as f:
             json.dump(data, f)
 
 
@@ -487,11 +487,11 @@ class YOLO:
         return names, images, bboxes, classes
 
     @staticmethod
-    def download(download_path: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
                  classes: List[np.ndarray]) -> None:
         """
-        Downloads a YOLO txt files to the :param download_path with the filename annotations.
-        :param download_path: THe path where the annotations file is being downloaded.
+        Downloads a YOLO txt files to the :param download_dir with the filename annotations.
+        :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
         :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
@@ -511,7 +511,22 @@ class YOLO:
         classes_dict = {n: i for i, n in enumerate({cls for classes_per in classes for cls in classes_per})}
         for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
             save_name = reduce(lambda n, fmt: n.strip(fmt), IMAGE_FORMATS, name)
-            with open(f"{download_path}/{save_name}.txt", "w") as f:
+            with open(f"{download_dir}/{save_name}.txt", "w") as f:
                 w, h, d = image.shape
                 for (y0, x0, y1, x1), c in zip(bboxes_per, classes_per):
                     f.write(f"{classes_dict[c]} {x0 / w} {y0 / h} {(x1 - x0) / w} {(y1 - y0) / h}\n")
+
+
+def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir: str, in_format: str, 
+                              out_format: str) -> None:
+    """
+    Converts localisation annotation from one format to another.
+    :param image_dir: THe directory of where the images are stored.
+    :param annotations_dir: The directory of the annotations file.
+    :param download_dir: The directory where the annotations are being downloaded.
+    :param in_format: The name of the format being converted from.
+    :param out_format: THe name of the format being converted to.
+    """
+    in_anno = LocalisationAnnotationFormats.get(in_format)
+    out_anno = LocalisationAnnotationFormats.get(out_format)
+    out_anno.download(download_dir, *in_anno.load(image_dir, annotations_dir))
