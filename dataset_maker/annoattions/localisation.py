@@ -10,6 +10,7 @@ import json
 import re
 import os
 
+
 IMAGE_FORMATS = (".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG")
 
 
@@ -137,7 +138,7 @@ class PascalVOC:
             for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
                 obj = ElementTree.SubElement(root, "object")
                 ElementTree.SubElement(obj, "name").text = str(cls)
-                
+
                 ElementTree.SubElement(obj, "pose").text = "Unspecified"
                 ElementTree.SubElement(obj, "truncated").text = "Unspecified"
                 ElementTree.SubElement(obj, "difficult").text = "Unspecified"
@@ -156,25 +157,41 @@ class PascalVOC:
 @Annotation.register
 class COCO:
     def load(self, image_dir: str, annotations_dir: str):
-        # if annotations_dir.endswith(".json"):
-        #     annotations_file = annotations_dir
-        # else:
-        #     potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".json")]
-        #     assert len(potential_annotations) != 0, \
-        #         f"Theres is no annotations .json file in {annotations_dir}."
-        #     assert len(potential_annotations) == 1, \
-        #         f"Theres are too many annotations .json files in {annotations_dir}."
-        #     annotations_file = potential_annotations[0]
-        # with open(f"{annotations_dir}/{annotations_file}", "r") as f:
-        #     annotations = json.load(f)
-        #
-        # names = []
-        # images = []
-        # bboxes = []
-        # classes = []
-        #
-        # for filename, annotation in annotations.items():
-        pass
+        if annotations_dir.endswith(".json"):
+            annotations_file = annotations_dir
+        else:
+            potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".json")]
+            assert len(potential_annotations) != 0, \
+                f"Theres is no annotations .json file in {annotations_dir}."
+            assert len(potential_annotations) == 1, \
+                f"Theres are too many annotations .json files in {annotations_dir}."
+            annotations_file = potential_annotations[0]
+        with open(f"{annotations_dir}/{annotations_file}", "r") as f:
+            annotations = json.load(f)
+
+        classes_dict = {cls_info["id"]: cls_info["name"] for cls_info in annotations["categories"]}
+
+        image_dict = {
+            image_info["id"]: {"bboxes": [], "classes": [], "name": image_info["filename"]}
+            for image_info in annotations["images"]
+        }
+        for annotation in annotations["annotations"]:
+            idx = annotation["image_id"]
+            x0, y0, x1, y1 = annotation["bbox"]
+            image_dict[idx]["bboxes"].append(np.asarray([y0, x0, y1, x1], dtype="int64"))
+            image_dict[idx]["classes"].append(classes_dict[annotation["category"]])
+
+        names = []
+        images = []
+        bboxes = []
+        classes = []
+        for info in image_dict.values():
+            name = info["name"]
+            names.append(name)
+            images.append(plt.imread(f"{image_dir}/{name}"))
+            bboxes.append(np.asarray(info["bboxes"]))
+            classes.append(np.asarray(info["classes"]))
+        return names, images, bboxes, classes
 
     def download(self, download_path, image_names, images, bboxes, classes) -> None:
         classes_dict = {n: i for i, n in enumerate({cls for classes_per in classes for cls in classes_per}, 1)}
@@ -200,7 +217,7 @@ class COCO:
         data = {
             "images": images_info,
             "annotations": annotations_info,
-            "categories": [{"id": cat_idx, "name": cls} for cls, cat_idx in classes_dict.values()]
+            "categories": [{"id": cat_idx, "name": str(cls)} for cls, cat_idx in classes_dict.items()]
         }
         with open(f"{download_path}/coco_annotations.json", "w") as f:
             json.dump(data, f)
