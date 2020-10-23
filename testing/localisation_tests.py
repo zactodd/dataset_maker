@@ -1,7 +1,7 @@
 import unittest
 from abc import abstractmethod
 import tempfile
-from annoattions import localisation_annotations as anno
+from annoattions import localisation as anno
 from dataset_maker import maker
 import numpy as np
 import matplotlib.pyplot as plt
