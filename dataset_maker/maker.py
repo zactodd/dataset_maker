@@ -95,7 +95,7 @@ class MultipleSquares(SingleSquare):
 
             for _ in range(n_examples):
                 bbox = y0, x0, y1, x1 = self.rand_square()
-                image[x0:x1, y0:y1] = (255, 0, 0)
+                image[x0:x1, y0:y1] = (1, 0, 0)
                 image_bboxes.append(np.asarray(bbox))
             images.append(image)
             bboxes.append(np.asarray(image_bboxes))
@@ -125,7 +125,7 @@ class MulticlassMultipleSquares(MultipleSquares):
             for _ in range(n_examples):
                 bbox = y0, x0, y1, x1 = self.rand_square()
                 colour = np.random.randint(self.n_classes)
-                image[x0:x1, y0:y1] = self.colours[colour]
+                image[x0:x1, y0:y1] = self.colours[colour] / 255
 
                 image_bboxes.append(np.asarray(bbox))
                 image_classes.append(colour)
@@ -133,4 +133,3 @@ class MulticlassMultipleSquares(MultipleSquares):
             bboxes.append(np.asarray(image_bboxes))
             classes.append(np.asarray(image_classes))
         return images, bboxes, classes
-
