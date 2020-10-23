@@ -8,3 +8,4 @@ cython
 matplotlib
 opencv-python
 pandas
+contextlib2
