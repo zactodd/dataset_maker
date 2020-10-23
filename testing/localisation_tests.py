@@ -50,6 +50,11 @@ class TestVGG(TestAnnotation, unittest.TestCase):
         return anno.VGG()
 
 
+class TestCOCO(TestAnnotation, unittest.TestCase):
+    def anno_load(self):
+        return anno.COCO()
+
+
 class TestYOLO(TestAnnotation, unittest.TestCase):
     def anno_load(self):
         return anno.YOLO()
