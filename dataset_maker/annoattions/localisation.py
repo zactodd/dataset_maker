@@ -26,16 +26,13 @@ class LocalisationAnnotation(ABC):
     def __init__(self):
         pass
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def load(image_dir: str, annotations_file: str) -> Dict:
-        """
-        Loads in images and annotation files and obtaines relivent adata and puts it in an np array.
-        """
         pass
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def download(download_dir, image_names, images, bboxes, classes) -> None:
         pass
 
@@ -431,7 +428,7 @@ class COCO:
 class YOLO:
     """
     Localisation Annotation Class for the loading and downloading YOLO annotations.
-    YOLO annotations are txt file image being annotated. For example:
+    YOLO annotations are txt file per image being annotated. For example:
     0 0.573204 0.619149 0.860499 0.738120
     1 0.758543 0.532122 0.241968 0.665306
     """
@@ -480,7 +477,7 @@ class YOLO:
                 for line in f.readlines():
                     cls, x0, y0, dx, dy = line.split()
                     x0, y0, dx, dy = float(x0), float(y0), float(dx), float(dy)
-                    bboxes_per.append(np.asarray([y0 * h, x0 * w, (y0 + dy) * h, (x0 + dx) * w], dtype="int32"))
+                    bboxes_per.append(np.asarray([y0 * h, x0 * w, (y0 + dy) * h, (x0 + dx) * w], dtype="int64"))
                     classes_per.append(cls)
                 bboxes.append(np.asarray(bboxes_per))
                 classes.append(np.asarray(classes_per))
@@ -515,6 +512,94 @@ class YOLO:
                 w, h, d = image.shape
                 for (y0, x0, y1, x1), c in zip(bboxes_per, classes_per):
                     f.write(f"{classes_dict[c]} {x0 / w} {y0 / h} {(x1 - x0) / w} {(y1 - y0) / h}\n")
+
+
+@strategy_method(LocalisationAnnotationFormats)
+@LocalisationAnnotation.register
+class OIDv4:
+    """
+    Localisation Annotation Class for the loading and downloading OIDv4 annotations.
+    OIDv4 annotations are txt file per image being annotated. For example:
+    camera 0.573204 0.619149 0.860499 0.738120
+    popcorn 0.758543 0.532122 0.241968 0.665306
+    """
+    @staticmethod
+    def load(image_dir, annotations_dir) -> Tuple[list, list, list, list]:
+        """
+        Loads a OIDv4 txt files and gets the names, images bounding boxes and classes for thr image.
+        :param image_dir: THe directory of where the images are stored.
+        :param annotations_dir: The directory of the annotations file.
+        :return: Returns names, images bounding boxes and classes
+            The names will be a list of strings.
+            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
+            format [y0, x0, y1, x1].
+            The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
+        """
+        annotation_files = [f for f in os.listdir(annotations_dir) if f.endswith(".txt")]
+        names = []
+        images = []
+        bboxes = []
+        classes = []
+        for file in annotation_files:
+            file_path = f"{annotations_dir}/{file}"
+            with open(file_path, "r") as f:
+                potential_images = []
+                for fmt in IMAGE_FORMATS:
+                    image_path = f"{image_dir}/{file.strip('.txt')}{fmt}"
+                    if os.path.exists(image_path):
+                        potential_images.append(image_path)
+
+                assert len(potential_images) != 0, \
+                    f"Theres is no image file in {image_dir} corresponding to the YOLO file {file_path}."
+                assert len(potential_images) == 1, \
+                    f"Theres are too many image file in {image_dir} corresponding to the YOLO file {file_path}."
+
+                image_path = potential_images[0]
+                name = re.split("/|\\\\", image_path)[-1]
+                names.append(name)
+
+                image = plt.imread(image_path)
+                images.append(images)
+                w, h, _ = image.shape
+
+                bboxes_per = []
+                classes_per = []
+                for line in f.readlines():
+                    cls, x0, y0, x1, y1 = line.split()
+                    x0, y0, dx, dy = float(x0), float(y0), float(dx), float(dy)
+                    bboxes_per.append(np.asarray([y0, x0, y1, x1], dtype="int64"))
+                    classes_per.append(cls)
+                bboxes.append(np.asarray(bboxes_per))
+                classes.append(np.asarray(classes_per))
+        return names, images, bboxes, classes
+
+    @staticmethod
+    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+                 classes: List[np.ndarray]) -> None:
+        """
+        Downloads a OIDv4 txt files to the :param download_dir with the filename annotations.
+        :param download_dir: The directory where the annotations are being downloaded.
+        :param image_names: The filenames of the image in the annotations. A list of strings.
+        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
+            n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
+        :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
+            n being the number of bounding boxes for the image.
+        :raise ValueError: The length of the params :param image_names, :param images :param bboxes and :param classes
+            must be the same.
+        """
+        assert len(image_names) == len(images) == len(bboxes) == len(classes), \
+            "The params image_names, images bboxes and classes must have the same length." \
+            f"len(image_names): {len(image_names)}\n" \
+            f"len(images): {len(images)}\n" \
+            f"len(bboxes): {len(bboxes)}\n" \
+            f"len(classes): {len(classes)}"
+
+        for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
+            save_name = reduce(lambda n, fmt: n.strip(fmt), IMAGE_FORMATS, name)
+            with open(f"{download_dir}/{save_name}.txt", "w") as f:
+                f.writelines(f"{c} {x0} {y0} {x1} {y1}" for (y0, x0, y1, x1), c in zip(bboxes_per, classes_per))
 
 
 def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir: str, in_format: str, 
