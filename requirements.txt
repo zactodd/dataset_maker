@@ -7,3 +7,4 @@ Pillow
 cython
 matplotlib
 opencv-python
+pandas
