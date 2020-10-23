@@ -1,6 +1,6 @@
 from patterns import SingletonStrategies, strategy_method
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict, List
 import numpy as np
 from xml.etree import ElementTree
 import matplotlib.pyplot as plt
@@ -14,7 +14,7 @@ import os
 IMAGE_FORMATS = (".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG")
 
 
-class AnnotationFormats(SingletonStrategies):
+class LocalisationAnnotationFormats(SingletonStrategies):
     def __init__(self):
         super().__init__()
 
@@ -22,25 +22,75 @@ class AnnotationFormats(SingletonStrategies):
         return "Annotations formats: \n" + "\n".join([f"{i:3}: {k}" for i, k in enumerate(self.strategies.keys())])
 
 
-class Annotation(ABC):
+class LocalisationAnnotation(ABC):
     def __init__(self):
         pass
 
     @abstractmethod
-    def load(self, image_dir: str, annotations_file: str) -> Dict:
+    @staticmethod
+    def load(image_dir: str, annotations_file: str) -> Dict:
         """
         Loads in images and annotation files and obtaines relivent adata and puts it in an np array.
         """
         pass
 
     @abstractmethod
-    def download(self, download_path, image_names, images, bboxes, classes) -> None:
+    @staticmethod
+    def download(download_path, image_names, images, bboxes, classes) -> None:
         pass
 
 
-@Annotation.register
+@strategy_method(LocalisationAnnotationFormats)
+@LocalisationAnnotation.register
 class VGG:
-    def load(self, image_dir: str, annotations_dir: str):
+    """
+    Localisation Annotation Class for the loading and downloading VGG annotations. VGG Annotation for use a .json
+    format. VGG can have its 'regions' as a dictionary with a full VGG file looking like:
+    {
+        "image_1.png": {
+                "regions": {
+                        0: {
+                            "shape_attributes": {
+                                "name": "polygon",
+                                "all_points_x": [0, 25, 25, 0],
+                                "all_points_y": [0, 0, 25, 25]
+                            },
+                            "region_attributes": {"label": "catfish"}
+                        }   
+        }
+    }
+    And VGG can have its 'regions' as a list with a full VGG file looking like:
+    {
+        "image_1.png": {
+                "regions": [
+                                {
+                                    "shape_attributes": {
+                                        "name": "polygon",
+                                        "all_points_x": [0, 25, 25, 0],
+                                        "all_points_y": [0, 0, 25, 25]
+                                    },
+                                    "region_attributes": {"label": "catfish"}
+                                }
+                ]  
+        }
+    }
+    """
+    @staticmethod
+    def load(image_dir: str, annotations_dir: str) -> \
+            Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+        """
+        Loads a VGG file and gets the names, images bounding boxes and classes for thr image.
+        :param image_dir: THe directory of where the images are stored.
+        :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
+        :return: Returns names, images bounding boxes and classes
+            The names will be a list of strings.
+            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the 
+            format [y0, x0, y1, x1].
+            The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
+        :raise ValueError: If there is more than one json file in the directory of :param annotations_dir.
+        :raise ValueError: If there is no json file in the directory of :param annotations_dir.
+        """
         if annotations_dir.endswith(".json"):
             annotations_file = annotations_dir
         else:
@@ -63,7 +113,12 @@ class VGG:
 
             bboxes_per = []
             classes_per = []
-            for r in annotation["regions"].values():
+            
+            regions = annotation["regions"]
+            if isinstance(regions, dict):
+                regions = regions.values()
+                
+            for r in regions:
                 bbox = utils.bbox(r["shape_attributes"]["all_points_x"], r["shape_attributes"]["all_points_y"])
                 bboxes_per.append(np.asarray(bbox))
                 classes_per.append(r["region_attributes"]["label"])
@@ -71,7 +126,28 @@ class VGG:
             classes.append(np.asarray(classes_per))
         return names, images, bboxes, classes
 
-    def download(self, download_path, image_names, images, bboxes, classes) -> None:
+    @staticmethod
+    def download(download_path: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+                 classes:  List[np.ndarray]) -> None:
+        """
+        Downloads a VGG json file to the :param download_path with the filename annotations.
+        :param download_path: THe path where the annotations file is being downloaded.
+        :param image_names: The filenames of the image in the annotations. A list of strings.
+        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
+            n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
+        :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
+            n being the number of bounding boxes for the image.
+        :raise ValueError: The length of the params :param image_names, :param images :param bboxes and :param classes
+            must be the same.
+        """
+        assert len(image_names) == len(images) == len(bboxes) == len(classes), \
+            "The params image_names, images bboxes and classes must have the same length." \
+            f"len(image_names): {len(image_names)}\n" \
+            f"len(images): {len(images)}\n" \
+            f"len(bboxes): {len(bboxes)}\n" \
+            f"len(classes): {len(classes)}"
+
         annotations = {
             name: {
                 "filename": name,
@@ -93,10 +169,47 @@ class VGG:
             json.dump(annotations, f)
 
 
-@strategy_method(AnnotationFormats)
-@Annotation.register
+@strategy_method(LocalisationAnnotationFormats)
+@LocalisationAnnotation.register
 class PascalVOC:
-    def load(self, image_dir: str, annotations_dir) -> Tuple[list, list, list, list]:
+    """
+    Localisation Annotation Class for the loading and downloading Pascal VOC annotations.
+    Pascal VOC annotations are xml per image being annotated. For example:
+    <annotation>
+        <filename>image_1.jpg</filename>
+        <size>
+            <width>2048</width>
+            <height>1536</height>
+            <depth>3</depth>
+        </size>
+        <object>
+            <name>dog</name>
+            <pose>Unspecified</pose>
+            <truncated>Unspecified</truncated>
+            <difficult>Unspecified</difficult>
+            <bndbox>
+                <xmin>293</xmin>
+                <ymin>384</ymin>
+                <xmax>2055</xmax>
+                <ymax>1518</ymax>
+            </bndbox>
+        </object>
+    </annotation>
+    """
+    
+    @staticmethod
+    def load(image_dir: str, annotations_dir: str) -> Tuple[list, list, list, list]:
+        """
+        Loads a Pascal VOC xml files and gets the names, images bounding boxes and classes for thr image.
+        :param image_dir: THe directory of where the images are stored.
+        :param annotations_dir: The directory of the annotations file.
+        :return: Returns names, images bounding boxes and classes
+            The names will be a list of strings.
+            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
+            format [y0, x0, y1, x1].
+            The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
+        """
         annotation_files = [f for f in os.listdir(annotations_dir) if f.endswith(".xml")]
         names = []
         images = []
@@ -121,7 +234,28 @@ class PascalVOC:
             classes.append(np.asarray(classes_per))
         return names, images, bboxes, classes
 
-    def download(self, download_path, image_names, images, bboxes, classes):
+    @staticmethod
+    def download(download_path: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+                 classes:  List[np.ndarray]) -> None:
+        """
+        Downloads a Pascal VOC xml files to the :param download_path with the filename annotations.
+        :param download_path: THe path where the annotations file is being downloaded.
+        :param image_names: The filenames of the image in the annotations. A list of strings.
+        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
+            n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
+        :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
+            n being the number of bounding boxes for the image.
+        :raise ValueError: The length of the params :param image_names, :param images :param bboxes and :param classes
+            must be the same.
+        """
+        assert len(image_names) == len(images) == len(bboxes) == len(classes), \
+            "The params image_names, images bboxes and classes must have the same length." \
+            f"len(image_names): {len(image_names)}\n" \
+            f"len(images): {len(images)}\n" \
+            f"len(bboxes): {len(bboxes)}\n" \
+            f"len(classes): {len(classes)}"
+
         folder = re.split("/|\\\\", download_path)[-1]
         for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
             w, h, d = image.shape
@@ -154,9 +288,57 @@ class PascalVOC:
                 f.write(ElementTree.tostring(root))
 
 
-@Annotation.register
+@strategy_method(LocalisationAnnotationFormats)
+@LocalisationAnnotation.register
 class COCO:
-    def load(self, image_dir: str, annotations_dir: str):
+    """
+    Localisation Annotation Class for the loading and downloading COCO annotations. COCO Annotation for use a .json
+    format. For Example:
+    {
+        "info": {
+            "images": [
+                {
+                    "id": 1,
+                    "width": 1504,
+                    "height": 2016,
+                    "file_name": "image_1.jpg"
+                }
+            ],
+            "annotations": [
+                {
+                    "id": 0,
+                    "iscrowd": 0,
+                    "image_id": 1,
+                    "category_id": 1,
+                    "segmentation":[[87.281, 708.408, 1416.71826, 1307.59]],
+                    "bbox": [87.281, 708.408, 1416.71826, 1307.59],
+                    "area":796574.87632
+                }
+            ]
+            "categories": [
+                {
+                    "id": 1,
+                    "name": "laptop"
+                }
+            ]
+        }
+    """
+    @staticmethod
+    def load(image_dir: str, annotations_dir: str) -> \
+            Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+        """
+        Loads a COCO file and gets the names, images bounding boxes and classes for thr image.
+        :param image_dir: THe directory of where the images are stored.
+        :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
+        :return: Returns names, images bounding boxes and classes
+            The names will be a list of strings.
+            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the 
+            format [y0, x0, y1, x1].
+            The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
+        :raise ValueError: If there is more than one json file in the directory of :param annotations_dir.
+        :raise ValueError: If there is no json file in the directory of :param annotations_dir.
+        """
         if annotations_dir.endswith(".json"):
             annotations_file = annotations_dir
         else:
@@ -193,7 +375,28 @@ class COCO:
             classes.append(np.asarray(info["classes"]))
         return names, images, bboxes, classes
 
-    def download(self, download_path, image_names, images, bboxes, classes) -> None:
+    @staticmethod
+    def download(download_path: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+                 classes: List[np.ndarray]) -> None:
+        """
+        Downloads a COCO json file to the :param download_path with the filename annotations.
+        :param download_path: THe path where the annotations file is being downloaded.
+        :param image_names: The filenames of the image in the annotations. A list of strings.
+        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
+            n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
+        :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
+            n being the number of bounding boxes for the image.
+        :raise ValueError: The length of the params :param image_names, :param images :param bboxes and :param classes
+            must be the same.
+        """
+        assert len(image_names) == len(images) == len(bboxes) == len(classes), \
+            "The params image_names, images bboxes and classes must have the same length." \
+            f"len(image_names): {len(image_names)}\n" \
+            f"len(images): {len(images)}\n" \
+            f"len(bboxes): {len(bboxes)}\n" \
+            f"len(classes): {len(classes)}"
+
         classes_dict = {n: i for i, n in enumerate({cls for classes_per in classes for cls in classes_per}, 1)}
         annotation_idx = 0
         images_info = []
@@ -223,9 +426,28 @@ class COCO:
             json.dump(data, f)
 
 
-@Annotation.register
+@strategy_method(LocalisationAnnotationFormats)
+@LocalisationAnnotation.register
 class YOLO:
-    def load(self, image_dir, annotations_dir) -> Tuple[list, list, list, list]:
+    """
+    Localisation Annotation Class for the loading and downloading YOLO annotations.
+    YOLO annotations are txt file image being annotated. For example:
+    0 0.573204 0.619149 0.860499 0.738120
+    1 0.758543 0.532122 0.241968 0.665306
+    """
+    @staticmethod
+    def load(image_dir, annotations_dir) -> Tuple[list, list, list, list]:
+        """
+        Loads a YOLO txt files and gets the names, images bounding boxes and classes for thr image.
+        :param image_dir: THe directory of where the images are stored.
+        :param annotations_dir: The directory of the annotations file.
+        :return: Returns names, images bounding boxes and classes
+            The names will be a list of strings.
+            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
+            format [y0, x0, y1, x1].
+            The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
+        """
         annotation_files = [f for f in os.listdir(annotations_dir) if f.endswith(".txt")]
         names = []
         images = []
@@ -264,7 +486,28 @@ class YOLO:
                 classes.append(np.asarray(classes_per))
         return names, images, bboxes, classes
 
-    def download(self, download_path, image_names, images, bboxes, classes):
+    @staticmethod
+    def download(download_path: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+                 classes: List[np.ndarray]) -> None:
+        """
+        Downloads a YOLO txt files to the :param download_path with the filename annotations.
+        :param download_path: THe path where the annotations file is being downloaded.
+        :param image_names: The filenames of the image in the annotations. A list of strings.
+        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
+            n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
+        :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
+            n being the number of bounding boxes for the image.
+        :raise ValueError: The length of the params :param image_names, :param images :param bboxes and :param classes
+            must be the same.
+        """
+        assert len(image_names) == len(images) == len(bboxes) == len(classes), \
+            "The params image_names, images bboxes and classes must have the same length." \
+            f"len(image_names): {len(image_names)}\n" \
+            f"len(images): {len(images)}\n" \
+            f"len(bboxes): {len(bboxes)}\n" \
+            f"len(classes): {len(classes)}"
+
         classes_dict = {n: i for i, n in enumerate({cls for classes_per in classes for cls in classes_per})}
         for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
             save_name = reduce(lambda n, fmt: n.strip(fmt), IMAGE_FORMATS, name)
