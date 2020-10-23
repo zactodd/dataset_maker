@@ -19,3 +19,10 @@ def bytes_list_feature(value):
 
 def float_list_feature(value):
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
+
+
+def open_sharded_output_tfrecords(exit_stack, base_path, num_shards):
+    return [
+        exit_stack.enter_context(tf.python_io.TFRecordWriter(f"{base_path}-{idx:05d}-of-{num_shards:05d}"))
+        for idx in range(num_shards)
+    ]
