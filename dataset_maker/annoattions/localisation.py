@@ -1,3 +1,5 @@
+import csv
+
 from patterns import SingletonStrategies, strategy_method
 from abc import ABC, abstractmethod
 from typing import Tuple, Dict, List
@@ -9,6 +11,7 @@ import utils
 import json
 import re
 import os
+from collections import defaultdict
 
 
 IMAGE_FORMATS = (".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG")
@@ -427,6 +430,7 @@ class COCO:
 @LocalisationAnnotation.register
 class YOLO:
     """
+
     Localisation Annotation Class for the loading and downloading YOLO annotations.
     YOLO annotations are txt file per image being annotated. For example:
     0 0.573204 0.619149 0.860499 0.738120
@@ -444,6 +448,8 @@ class YOLO:
             The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
             format [y0, x0, y1, x1].
             The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
+        :raise OSError: If there are no image files corresponding to an annotations txt filename.
+        :raise OSError: If there more than one image file corresponding to an annotations txt filename.
         """
         annotation_files = [f for f in os.listdir(annotations_dir) if f.endswith(".txt")]
         names = []
@@ -476,7 +482,6 @@ class YOLO:
                 classes_per = []
                 for line in f.readlines():
                     cls, x0, y0, dx, dy = line.split()
-                    x0, y0, dx, dy = float(x0), float(y0), float(dx), float(dy)
                     bboxes_per.append(np.asarray([y0 * h, x0 * w, (y0 + dy) * h, (x0 + dx) * w], dtype="int64"))
                     classes_per.append(cls)
                 bboxes.append(np.asarray(bboxes_per))
@@ -510,8 +515,8 @@ class YOLO:
             save_name = reduce(lambda n, fmt: n.strip(fmt), IMAGE_FORMATS, name)
             with open(f"{download_dir}/{save_name}.txt", "w") as f:
                 w, h, d = image.shape
-                for (y0, x0, y1, x1), c in zip(bboxes_per, classes_per):
-                    f.write(f"{classes_dict[c]} {x0 / w} {y0 / h} {(x1 - x0) / w} {(y1 - y0) / h}\n")
+                for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
+                    f.write(f"{classes_dict[cls]} {x0 / w} {y0 / h} {(x1 - x0) / w} {(y1 - y0) / h}\n")
 
 
 @strategy_method(LocalisationAnnotationFormats)
@@ -520,6 +525,7 @@ class OIDv4:
     """
     Localisation Annotation Class for the loading and downloading OIDv4 annotations.
     OIDv4 annotations are txt file per image being annotated. For example:
+
     camera 0.573204 0.619149 0.860499 0.738120
     popcorn 0.758543 0.532122 0.241968 0.665306
     """
@@ -535,6 +541,8 @@ class OIDv4:
             The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
             format [y0, x0, y1, x1].
             The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
+        :raise OSError: If there are no image files corresponding to an annotations txt filename.
+        :raise OSError: If there more than one image file corresponding to an annotations txt filename.
         """
         annotation_files = [f for f in os.listdir(annotations_dir) if f.endswith(".txt")]
         names = []
@@ -566,8 +574,8 @@ class OIDv4:
                 bboxes_per = []
                 classes_per = []
                 for line in f.readlines():
+                    print(line)
                     cls, x0, y0, x1, y1 = line.split()
-                    x0, y0, dx, dy = float(x0), float(y0), float(dx), float(dy)
                     bboxes_per.append(np.asarray([y0, x0, y1, x1], dtype="int64"))
                     classes_per.append(cls)
                 bboxes.append(np.asarray(bboxes_per))
@@ -599,7 +607,105 @@ class OIDv4:
         for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
             save_name = reduce(lambda n, fmt: n.strip(fmt), IMAGE_FORMATS, name)
             with open(f"{download_dir}/{save_name}.txt", "w") as f:
-                f.writelines(f"{c} {x0} {y0} {x1} {y1}" for (y0, x0, y1, x1), c in zip(bboxes_per, classes_per))
+                f.writelines(f"{cls} {x0} {y0} {x1} {y1}\n" for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per))
+
+
+class TensorflowObjectDetectionCSV(LocalisationAnnotation):
+    """
+    Localisation Annotation Class for the loading and downloading Tensorflow Object Detection CSV annotations.
+    Tensorflow Object Detection CSV annotations is a csv file. For example:
+
+    filename,width,height,class,xmin,ymin,xmax,ymax
+    000001.jpg,500,375,helmet,111,144,134,174
+    000001.jpg,500,375,helmet,178,84,230,143
+    000007.jpg,500,466,helmet,115,139,180,230
+    000007.jpg,500,466,helmet,174,156,201,219
+    000007.jpg,500,466,helmet,197,177,231,227
+    """
+    @staticmethod
+    def load(image_dir: str, annotations_dir: str) -> \
+            Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+        """
+        Loads a COCO file and gets the names, images bounding boxes and classes for thr image.
+        :param image_dir: THe directory of where the images are stored.
+        :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
+        :return: Returns names, images bounding boxes and classes
+            The names will be a list of strings.
+            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
+            format [y0, x0, y1, x1].
+            The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
+        :raise ValueError: If there is more than one json file in the directory of :param annotations_dir.
+        :raise ValueError: If there is no json file in the directory of :param annotations_dir.
+        """
+        if annotations_dir.endswith(".csv"):
+            annotations_file = annotations_dir
+        else:
+            potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".csv")]
+            assert len(potential_annotations) != 0, \
+                f"Theres is no annotations .json file in {annotations_dir}."
+            assert len(potential_annotations) == 1, \
+                f"Theres are too many annotations .json files in {annotations_dir}."
+            annotations_file = potential_annotations[0]
+
+        image_dict = defaultdict(lambda: {"bboxes": [], "classes": []})
+        with open(f"{annotations_dir}/{annotations_file}", "r") as f:
+            for row in csv.DictReader(f, delimiter=','):
+                name = row["filename"]
+                y0, x0, y1, x1 = row["ymin"], row["xmin"], row["ymax"], row["xmax"]
+                image_dict[name]["bboxes"].append(np.asarray([y0, x0, y1, x1], dtype="int64"))
+                image_dict[name]["classes"].append(row["class"])
+
+        names = []
+        images = []
+        bboxes = []
+        classes = []
+        for name, info in image_dict.items():
+            names.append(name)
+            images.append(plt.imread(f"{image_dir}/{name}"))
+            bboxes.append(np.asarray(info["bboxes"]))
+            classes.append(np.asarray(info["classes"]))
+        return names, images, bboxes, classes
+
+    @staticmethod
+    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+                 classes: List[np.ndarray]) -> None:
+        """
+        Downloads a Tensorflow Object Detection CSV file to the :param download_dir with the filename annotations.
+        :param download_dir: The directory where the annotations are being downloaded.
+        :param image_names: The filenames of the image in the annotations. A list of strings.
+        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
+            n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
+        :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
+            n being the number of bounding boxes for the image.
+        :raise ValueError: The length of the params :param image_names, :param images :param bboxes and :param classes
+            must be the same.
+        """
+        assert len(image_names) == len(images) == len(bboxes) == len(classes), \
+            "The params image_names, images bboxes and classes must have the same length." \
+            f"len(image_names): {len(image_names)}\n" \
+            f"len(images): {len(images)}\n" \
+            f"len(bboxes): {len(bboxes)}\n" \
+            f"len(classes): {len(classes)}"
+
+        with open(f"{download_dir}/annotations.csv", mode='w') as f:
+            fieldnames = ["filename", "width", "height", "class", "xmin", "ymin", "xmax", "ymax"]
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
+                w, h, _ = image.shape
+                for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
+                    writer.writerow({
+                        "filename": name,
+                        "width": w,
+                        "height": h,
+                        "class": cls,
+                        "xmin": x0,
+                        "ymin": y0,
+                        "xmax": x1,
+                        "ymax": y1
+                    })
 
 
 def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir: str, in_format: str, 

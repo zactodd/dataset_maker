@@ -58,9 +58,14 @@ class TestYOLO(TestAnnotation, unittest.TestCase):
         return anno.YOLO()
 
 
-# class TestOIDv4(TestAnnotation, unittest.TestCase):
-#     def anno_load(self):
-#         return anno.OIDv4()
+class TestOIDv4(TestAnnotation, unittest.TestCase):
+    def anno_load(self):
+        return anno.OIDv4()
+
+
+class TestTensorflowObjectDetectionCSV(TestAnnotation, unittest.TestCase):
+    def anno_load(self):
+        return anno.TensorflowObjectDetectionCSV()
 
 #
 #
