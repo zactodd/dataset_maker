@@ -28,8 +28,6 @@ class TestAnnotation:
         return None
 
     def test_same_names(self):
-        print(self.names)
-        print(self.dl_names)
         self.assertEqual(set(self.names), set(self.dl_names))
 
     def test_same_bboxes(self):
@@ -58,6 +56,12 @@ class TestCOCO(TestAnnotation, unittest.TestCase):
 class TestYOLO(TestAnnotation, unittest.TestCase):
     def anno_load(self):
         return anno.YOLO()
+
+
+# class TestOIDv4(TestAnnotation, unittest.TestCase):
+#     def anno_load(self):
+#         return anno.OIDv4()
+
 #
 #
 # class TestPascalVOCToYOLO(TestAnnotationTranslation, unittest.TestCase):
