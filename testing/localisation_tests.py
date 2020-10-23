@@ -72,6 +72,11 @@ class TestICMCloud(TestAnnotation, unittest.TestCase):
     def anno_load(self):
         return anno.IBMCloud()
 
+
+class TestVoTTCSV(TestAnnotation, unittest.TestCase):
+    def anno_load(self):
+        return anno.VoTTCSV()
+
 #
 #
 # class TestPascalVOCToYOLO(TestAnnotationTranslation, unittest.TestCase):

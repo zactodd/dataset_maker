@@ -628,7 +628,7 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
     def load(image_dir: str, annotations_dir: str) -> \
             Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
         """
-        Loads a COCO file and gets the names, images bounding boxes and classes for thr image.
+        Loads a Tensorflow Object Detection CSV file and gets the names, images bounding boxes and classes for thr image.
         :param image_dir: THe directory of where the images are stored.
         :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
         :return: Returns names, images bounding boxes and classes
@@ -691,7 +691,7 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
             f"len(bboxes): {len(bboxes)}\n" \
             f"len(classes): {len(classes)}"
 
-        with open(f"{download_dir}/annotations.csv", mode='w') as f:
+        with open(f"{download_dir}/tensorflow_object_detection_annotations.csv", mode='w') as f:
             fieldnames = ["filename", "width", "height", "class", "xmin", "ymin", "xmax", "ymax"]
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
@@ -823,8 +823,104 @@ class IBMCloud:
             "labels": list({str(cls) for classes_per in classes for cls in classes_per}),
             "annotations": annotations_info
         }
-        with open(f"{download_dir}/vgg_annotations.json", "w") as f:
+        with open(f"{download_dir}/ibm_cloud_annotations.json", "w") as f:
             json.dump(annotations, f)
+
+
+@strategy_method(LocalisationAnnotationFormats)
+@LocalisationAnnotation.register
+class VoTTCSV(LocalisationAnnotation):
+    """
+    Localisation Annotation Class for the loading and downloading VoTT CSV annotations.
+    VoTT CSV annotations is a csv file. For example:
+
+    "image","xmin","ymin","xmax","ymax","label"
+    "img0001.jpg",109.02857142857141,86.14285714285714,153.77142857142854,123.94285714285714,"helmet"
+    "img0001.jpg",122.69760696156635,18.85103626943005,193.18346627991298,88.48834196891191,"person"
+    "img0002.jpg",6.816997518610422,22.483428571428572,195.0452853598015,182.48685714285713,"helmet"
+    """
+    @staticmethod
+    def load(image_dir: str, annotations_dir: str) -> \
+            Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+        """
+        Loads a VoTT CSV file and gets the names, images bounding boxes and classes for thr image.
+        :param image_dir: THe directory of where the images are stored.
+        :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
+        :return: Returns names, images bounding boxes and classes
+            The names will be a list of strings.
+            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
+            format [y0, x0, y1, x1].
+            The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
+        :raise ValueError: If there is more than one json file in the directory of :param annotations_dir.
+        :raise ValueError: If there is no json file in the directory of :param annotations_dir.
+        """
+        if annotations_dir.endswith(".csv"):
+            annotations_file = annotations_dir
+        else:
+            potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".csv")]
+            assert len(potential_annotations) != 0, \
+                f"Theres is no annotations .json file in {annotations_dir}."
+            assert len(potential_annotations) == 1, \
+                f"Theres are too many annotations .json files in {annotations_dir}."
+            annotations_file = potential_annotations[0]
+
+        image_dict = defaultdict(lambda: {"bboxes": [], "classes": []})
+        with open(f"{annotations_dir}/{annotations_file}", "r") as f:
+            for row in csv.DictReader(f, delimiter=','):
+                name = row["\"image\""]
+                y0, x0, y1, x1 = row["\"ymin\""], row["\"xmin\""], row["\"ymax\""], row["\"xmax\""]
+                image_dict[name]["bboxes"].append(np.asarray([y0, x0, y1, x1], dtype="int64"))
+                image_dict[name]["classes"].append(row["\"label\""].strip("\""))
+
+        names = []
+        images = []
+        bboxes = []
+        classes = []
+        for name, info in image_dict.items():
+            name = name.strip("\"")
+            names.append(name)
+            images.append(plt.imread(f"{image_dir}/{name}"))
+            bboxes.append(np.asarray(info["bboxes"]))
+            classes.append(np.asarray(info["classes"]))
+        return names, images, bboxes, classes
+
+    @staticmethod
+    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+                 classes: List[np.ndarray]) -> None:
+        """
+        Downloads a VoTT CSV file to the :param download_dir with the filename annotations.
+        :param download_dir: The directory where the annotations are being downloaded.
+        :param image_names: The filenames of the image in the annotations. A list of strings.
+        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
+            n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
+        :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
+            n being the number of bounding boxes for the image.
+        :raise ValueError: The length of the params :param image_names, :param images :param bboxes and :param classes
+            must be the same.
+        """
+        assert len(image_names) == len(images) == len(bboxes) == len(classes), \
+            "The params image_names, images bboxes and classes must have the same length." \
+            f"len(image_names): {len(image_names)}\n" \
+            f"len(images): {len(images)}\n" \
+            f"len(bboxes): {len(bboxes)}\n" \
+            f"len(classes): {len(classes)}"
+
+        with open(f"{download_dir}/vott_annotations.csv", mode='w') as f:
+            fieldnames = ["\"image\"", "\"xmin\"", "\"ymin\"", "\"xmax\"","\"ymax\"", "\"label\""]
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
+                for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
+                    writer.writerow({
+                        "\"image\"": f"\"{name}\"",
+                        "\"label\"": f"\"{cls}\"",
+                        "\"xmin\"": x0,
+                        "\"ymin\"": y0,
+                        "\"xmax\"": x1,
+                        "\"ymax\"": y1
+                    })
 
 
 def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir: str, in_format: str, 
