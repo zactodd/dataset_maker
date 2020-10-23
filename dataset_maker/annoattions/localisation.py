@@ -1,5 +1,5 @@
 import csv
-
+import hashlib
 from patterns import SingletonStrategies, strategy_method
 from abc import ABC, abstractmethod
 from typing import Tuple, Dict, List
@@ -708,6 +708,123 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
                         "xmax": x1,
                         "ymax": y1
                     })
+
+
+@strategy_method(LocalisationAnnotationFormats)
+@LocalisationAnnotation.register
+class IBMCloud:
+    """
+    Localisation Annotation Class for the loading and downloading VGG annotations. IBM Cloud uses a .json format.
+    For example:
+
+    {
+    "version": "1.0",
+    "type": "localization",
+    "labels": ["Untitled Label", "cat", "mouse"],
+    "annotations": {
+        "85f760d0-c1b6-4ff4-a7f9-88ee6654a355.jpg": [{
+                "x": 0.8056980180806675,
+                "y": 0.6729166666666667,
+                "x2": 0.8752390472878998,
+                "y2": 0.8041666666666667,
+                "id": "b523453f-d2bb-4ef1-88bb-1f18cba207c4",
+                "label": "mouse"
+            }]
+        }
+    """
+
+    @staticmethod
+    def load(image_dir: str, annotations_dir: str) -> \
+            Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+        """
+        Loads a IBM CLoud json file and gets the names, images bounding boxes and classes for thr image.
+        :param image_dir: THe directory of where the images are stored.
+        :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
+        :return: Returns names, images bounding boxes and classes
+            The names will be a list of strings.
+            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
+            format [y0, x0, y1, x1].
+            The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
+        :raise ValueError: If there is more than one json file in the directory of :param annotations_dir.
+        :raise ValueError: If there is no json file in the directory of :param annotations_dir.
+        """
+        if annotations_dir.endswith(".json"):
+            annotations_file = annotations_dir
+        else:
+            potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".json")]
+            assert len(potential_annotations) != 0, \
+                f"Theres is no annotations .json file in {annotations_dir}."
+            assert len(potential_annotations) == 1, \
+                f"Theres are too many annotations .json files in {annotations_dir}."
+            annotations_file = potential_annotations[0]
+        with open(f"{annotations_dir}/{annotations_file}", "r") as f:
+            annotations = json.load(f)
+
+        names = []
+        images = []
+        bboxes = []
+        classes = []
+        for filename, annotation in annotations["annotations"].items():
+            names.append(filename)
+            image = plt.imread(f"{image_dir}/{filename}")
+            w, h, _ = image.shape
+            images.append(image)
+
+            bboxes_per = []
+            classes_per = []
+            for a in annotation:
+                bboxes_per.append(np.asarray([a["y"] * h, a["x"] * w, a["y2"] * h, a["x2"] * w], dtype="int64"))
+                classes_per.append(a["label"])
+            bboxes.append(np.asarray(bboxes_per))
+            classes.append(np.asarray(classes_per))
+        return names, images, bboxes, classes
+
+    @staticmethod
+    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+                 classes: List[np.ndarray]) -> None:
+        """
+        Downloads a IBM CLoud json file to the :param download_dir with the filename annotations.
+        :param download_dir: The directory where the annotations are being downloaded.
+        :param image_names: The filenames of the image in the annotations. A list of strings.
+        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
+            n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
+        :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
+            n being the number of bounding boxes for the image.
+        :raise ValueError: The length of the params :param image_names, :param images :param bboxes and :param classes
+            must be the same.
+        """
+        assert len(image_names) == len(images) == len(bboxes) == len(classes), \
+            "The params image_names, images bboxes and classes must have the same length." \
+            f"len(image_names): {len(image_names)}\n" \
+            f"len(images): {len(images)}\n" \
+            f"len(bboxes): {len(bboxes)}\n" \
+            f"len(classes): {len(classes)}"
+
+        annotations_info = defaultdict(list)
+        annotation_idx = 0
+        for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
+            w, h, _ = image.shape
+            for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
+                annotations_info[name].append({
+                    "label": str(cls),
+                    "x": float(x0 / w),
+                    "y": float(y0 / h),
+                    "x2": float(x1 / w),
+                    "y2": float(y1 / h),
+                    "id": str(hashlib.md5(str(annotation_idx).encode("utf-8")))
+                })
+            annotation_idx += 1
+
+        annotations = {
+            "version": "1.0",
+            "type": "localization",
+            "labels": list({str(cls) for classes_per in classes for cls in classes_per}),
+            "annotations": annotations_info
+        }
+        with open(f"{download_dir}/vgg_annotations.json", "w") as f:
+            json.dump(annotations, f)
 
 
 def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir: str, in_format: str, 

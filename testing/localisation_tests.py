@@ -67,6 +67,11 @@ class TestTensorflowObjectDetectionCSV(TestAnnotation, unittest.TestCase):
     def anno_load(self):
         return anno.TensorflowObjectDetectionCSV()
 
+
+class TestICMCloud(TestAnnotation, unittest.TestCase):
+    def anno_load(self):
+        return anno.IBMCloud()
+
 #
 #
 # class TestPascalVOCToYOLO(TestAnnotationTranslation, unittest.TestCase):
