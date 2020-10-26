@@ -341,9 +341,10 @@ class PascalVOC:
         annotation_files = [f"{annotations_dir}/{f}" for f in os.listdir(annotations_dir) if f.endswith(".xml")]
 
         if class_map is None:
-            class_map = {obj.find("name").text: idx for f in annotation_files
-                         for idx, obj in enumerate(ElementTree.parse(f).findall("object"), 1)}
-
+            classes = {obj.find("name").text for f in annotation_files
+                       for obj in ElementTree.parse(f).findall("object")}
+            class_map = {cls: idx for idx, cls in enumerate(classes, 1)}
+            
         with contextlib2.ExitStack() as close_stack:
             output_tfrecords = dataset_utils.open_sharded_output_tfrecords(close_stack, output_path, num_shards)
 
