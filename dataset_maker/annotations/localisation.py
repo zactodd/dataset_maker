@@ -1014,15 +1014,3 @@ def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir
 
     out_format.download(download_dir, *in_format.load(image_dir, annotations_dir))
 
-
-# FIXME
-def convert_to_tfrecord(image_dir, annotation_dir, output_dir, annotation, num_shard):
-    from annotations.localisation_tfrecord import tensorflow_object_csv_to_tfrecord
-    import tempfile
-    if isinstance(annotation, TensorflowObjectDetectionCSV) or annotation == "TensorflowObjectDetectionCSV":
-        tensorflow_object_csv_to_tfrecord(output_dir, annotation_dir, num_shard)
-    else:
-        with tempfile.TemporaryDirectory() as td:
-            convert_annotation_format(image_dir, annotation_dir, td, annotation, TensorflowObjectDetectionCSV())
-            tensorflow_object_csv_to_tfrecord(output_dir, td, num_shard)
-
