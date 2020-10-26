@@ -344,7 +344,7 @@ class PascalVOC:
             classes = {obj.find("name").text for f in annotation_files
                        for obj in ElementTree.parse(f).findall("object")}
             class_map = {cls: idx for idx, cls in enumerate(classes, 1)}
-            
+
         with contextlib2.ExitStack() as close_stack:
             output_tfrecords = dataset_utils.open_sharded_output_tfrecords(close_stack, output_path, num_shards)
 
