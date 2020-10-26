@@ -52,7 +52,7 @@ def create_tf_example(group, path, class_map=None):
         "image/width": dataset_utils.int64_feature(width),
         "image/filename": dataset_utils.bytes_feature(filename),
         "image/source_id": dataset_utils.bytes_feature(filename),
-        "image/encoded": dataset_utils.bytes_feature(encoded_jpg),
+        "image/encoded": dataset_utils.bytes_feature(encoded_image),
         "image/format": dataset_utils.bytes_feature(image_format),
         "image/object/bbox/xmin": dataset_utils.float_list_feature(xmins),
         "image/object/bbox/xmax": dataset_utils.float_list_feature(xmaxs),
