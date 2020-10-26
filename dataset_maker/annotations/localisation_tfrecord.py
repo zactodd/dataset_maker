@@ -20,10 +20,10 @@ def split(df, group):
 
 
 def create_tf_example(group, path, class_map=None):
-    with tf.gfile.GFile(os.path.join(path, "{}".format(group.filename)), "rb") as fid:
-        encoded_jpg = fid.read()
-    encoded_jpg_io = io.BytesIO(encoded_jpg)
-    image = Image.open(encoded_jpg_io)
+    with tf.gfile.GFile(os.path.join(path, group.filename), "rb") as fid:
+        encoded_image = fid.read()
+    encoded_io = io.BytesIO(encoded_image)
+    image = Image.open(encoded_io)
     width, height = image.size
 
     filename = group.filename.encode("utf8")
