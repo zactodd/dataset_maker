@@ -2,7 +2,7 @@ import csv
 import hashlib
 from patterns import SingletonStrategies, strategy_method
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Union, Type
 import numpy as np
 from xml.etree import ElementTree
 import matplotlib.pyplot as plt
@@ -923,8 +923,9 @@ class VoTTCSV(LocalisationAnnotation):
                     })
 
 
-def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir: str, in_format: str, 
-                              out_format: str) -> None:
+def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir: str,
+                              in_format: Union[LocalisationAnnotation, str],
+                              out_format: Union[LocalisationAnnotation, str]) -> None:
     """
     Converts localisation annotation from one format to another.
     :param image_dir: THe directory of where the images are stored.
@@ -933,6 +934,28 @@ def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir
     :param in_format: The name of the format being converted from.
     :param out_format: THe name of the format being converted to.
     """
-    in_anno = LocalisationAnnotationFormats.get(in_format)
-    out_anno = LocalisationAnnotationFormats.get(out_format)
-    out_anno.download(download_dir, *in_anno.load(image_dir, annotations_dir))
+    assert isinstance(in_format, (LocalisationAnnotation, str)), \
+        f"in_format: {in_format} need to string or LocalisationAnnotation."
+    assert isinstance(out_format, (LocalisationAnnotation, str)), \
+        f"out_format: {out_format} need to string or LocalisationAnnotation."
+
+    if isinstance(in_format, str):
+        in_format = LocalisationAnnotationFormats.get(in_format)
+
+    if isinstance(out_format, str):
+        out_format = LocalisationAnnotationFormats.get(out_format)
+
+    out_format.download(download_dir, *in_format.load(image_dir, annotations_dir))
+
+
+# FIXME
+def convert_to_tfrecord(image_dir, annotation_dir, output_dir, annotation, num_shard):
+    from annotations.localisation_tfrecord import tensorflow_object_csv_to_tfrecord
+    import tempfile
+    if isinstance(annotation, TensorflowObjectDetectionCSV) or annotation == "TensorflowObjectDetectionCSV":
+        tensorflow_object_csv_to_tfrecord(output_dir, annotation_dir, num_shard)
+    else:
+        with tempfile.TemporaryDirectory() as td:
+            convert_annotation_format(image_dir, annotation_dir, td, annotation, TensorflowObjectDetectionCSV())
+            tensorflow_object_csv_to_tfrecord(output_dir, td, num_shard)
+
