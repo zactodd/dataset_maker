@@ -24,5 +24,5 @@ def float_list_feature(value):
 def open_sharded_output_tfrecords(exit_stack, base_path, num_shards):
     return [
         exit_stack.enter_context(tf.python_io.TFRecordWriter(f"{base_path}-{idx:05d}-of-{num_shards:05d}"))
-        for idx in range(num_shards)
+        for idx in range(1, num_shards + 1)
     ]
