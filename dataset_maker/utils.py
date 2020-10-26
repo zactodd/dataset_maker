@@ -4,7 +4,7 @@ from typing import Iterable, Tuple
 
 def spec(n):
     t = np.linspace(-510, 510, n)
-    return np.round(np.clip(np.stack([-t, 510-np.abs(t), t], axis=1), 0, 255)).astype(np.uint8)
+    return np.round(np.clip(np.stack([-t, 510 - np.abs(t), t], axis=1), 0, 255)).astype(np.uint8)
 
 
 def bbox(x: Iterable[int], y: Iterable[int], out_format: str = "2p") -> Tuple[int, int, int, int]:
