@@ -1,19 +1,19 @@
 import csv
 import hashlib
-from patterns import SingletonStrategies, strategy_method
+from dataset_maker.patterns import SingletonStrategies, strategy_method
 from abc import ABC, abstractmethod
 from typing import Tuple, Dict, List, Union
 import numpy as np
 from xml.etree import ElementTree
 import matplotlib.pyplot as plt
 from functools import reduce
-import utils
+from dataset_maker import utils
 import json
 import re
 import os
 from collections import defaultdict
 import tensorflow as tf
-from annotations import dataset_utils
+from dataset_maker.annotations import dataset_utils
 import contextlib2
 from PIL import Image
 import io

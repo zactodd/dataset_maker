@@ -1,11 +1,11 @@
 import unittest
 from abc import abstractmethod
 import tempfile
-from annotations import localisation as anno
+from dataset_maker.annotations import localisation as anno
 from dataset_maker import maker
 import numpy as np
 import matplotlib.pyplot as plt
-from patterns import Singleton
+from dataset_maker.patterns import Singleton
 
 
 class TestHelper(metaclass=Singleton):

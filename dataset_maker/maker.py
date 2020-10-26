@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Tuple
 import numpy as np
 import matplotlib.pyplot as plt
-import utils
+from dataset_maker import utils
 
 
 class DatasetMaker(ABC):

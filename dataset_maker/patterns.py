@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from types_utils import F
+from dataset_maker.types_utils import F
 from typing import Type
 
 
