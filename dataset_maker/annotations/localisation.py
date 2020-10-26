@@ -222,7 +222,7 @@ class PascalVOC:
         classes = []
         for f in annotation_files:
             root = ElementTree.parse(f"{annotations_dir}/{f}")
-            name = root.find("file").text
+            name = root.find("filename").text
             names.append(name)
             images.append(plt.imread(f"{image_dir}/{name}"))
             bboxes_per = []
@@ -267,7 +267,7 @@ class PascalVOC:
 
             root = ElementTree.Element("annotation")
             ElementTree.SubElement(root, "folder").text = folder
-            ElementTree.SubElement(root, "file").text = name
+            ElementTree.SubElement(root, "filename").text = name
 
             size = ElementTree.SubElement(root, "size")
             ElementTree.SubElement(size, "width").text = str(w)
@@ -341,15 +341,15 @@ class PascalVOC:
         annotation_files = [f"{annotations_dir}/{f}" for f in os.listdir(annotations_dir) if f.endswith(".xml")]
 
         if class_map is None:
-            class_map = {cls: idx for f in annotation_files
-                         for idx, cls in enumerate(ElementTree.parse(f).findall("name"), 1)}
+            class_map = {obj.find("name").text: idx for f in annotation_files
+                         for idx, obj in enumerate(ElementTree.parse(f).findall("object"), 1)}
 
         with contextlib2.ExitStack() as close_stack:
             output_tfrecords = dataset_utils.open_sharded_output_tfrecords(close_stack, output_path, num_shards)
 
             for idx, f in enumerate(annotation_files):
                 root = ElementTree.parse(f)
-                image_file = root.find("file").text
+                image_file = root.find("filename").text
                 tf_example = _create_example(image_dir, image_file, f, class_map)
                 shard_idx = idx % num_shards
                 output_tfrecords[shard_idx].write(tf_example.SerializeToString())
