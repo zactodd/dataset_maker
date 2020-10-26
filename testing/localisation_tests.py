@@ -48,6 +48,8 @@ class TestHelper(metaclass=Singleton):
 
 class TestAnnotation:
     def setUp(self):
+        self.verification_errors = []
+
         th = TestHelper()
         th.setup_annotation_test(self.anno_load())
 
@@ -65,10 +67,8 @@ class TestAnnotation:
 
         self.tfrecord_examples = th.tfrecord_examples
 
-
-
     def tearDown(self):
-        self.assertEqual([], self.verificationErrors)
+        self.assertEqual([], self.verification_errors)
 
     @abstractmethod
     def anno_load(self):
@@ -82,16 +82,22 @@ class TestAnnotation:
 
     def test_same_num_bboxes(self):
         for n in self.names:
-            bbox = self.names_dict[n][1]
-            dl_bbox = self.dl_names_dict[n][1]
-            self.assertEqual(bbox.shape, dl_bbox.shape)
+            try:
+                bbox = self.names_dict[n][1]
+                dl_bbox = self.dl_names_dict[n][1]
+                self.assertEqual(bbox.shape, dl_bbox.shape)
+            except AssertionError as e:
+                self.verificationErrors.append(str(e))
 
     def test_same_bboxes(self):
         for n in self.names:
-            bbox = self.names_dict[n][1]
-            dl_bbox = self.dl_names_dict[n][1]
-            diff = np.abs(bbox - dl_bbox)
-            self.assertTrue(np.all(diff <= 1), msg=f"The bboxs differ by more than one pixel. \n{bbox}\n{dl_bbox}")
+            try:
+                bbox = self.names_dict[n][1]
+                dl_bbox = self.dl_names_dict[n][1]
+                diff = np.abs(bbox - dl_bbox)
+                self.assertTrue(np.all(diff <= 1), msg=f"The bboxs differ by more than one pixel. \n{bbox}\n{dl_bbox}")
+            except AssertionError as e:
+                self.verificationErrors.append(str(e))
 
     def test_same_unique_num_classes(self):
         cls_set = {cls for cls_per in self.classes for cls in cls_per}
@@ -100,9 +106,12 @@ class TestAnnotation:
 
     def test_same_num_classes(self):
         for n in self.names:
-            classes = self.names_dict[n][2]
-            dl_classes = self.dl_names_dict[n][2]
-            self.assertEqual(classes.shape, dl_classes.shape)
+            try:
+                classes = self.names_dict[n][2]
+                dl_classes = self.dl_names_dict[n][2]
+                self.assertEqual(classes.shape, dl_classes.shape)
+            except AssertionError as e:
+                self.verificationErrors.append(str(e))
 
 
 class TestPascalVOC(TestAnnotation, unittest.TestCase):
