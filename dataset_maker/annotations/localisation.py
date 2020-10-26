@@ -314,14 +314,14 @@ class PascalVOC:
             root = ElementTree.parse(annotation_path)
             for obj in root.findall("object"):
                 bbox = obj.find("bndbox")
-                xmins.append(float(bbox.find("ymin").text))
+                ymins.append(float(bbox.find("ymin").text))
                 xmins.append(float(bbox.find("xmin").text))
-                xmins.append(float(bbox.find("ymax").text))
-                xmins.append(float(bbox.find("xmax").text))
+                ymaxs.append(float(bbox.find("ymax").text))
+                xmaxs.append(float(bbox.find("xmax").text))
 
                 cls = obj.find("name").text
                 classes_text.append(cls.encode("utf8"))
-                classes.append(class_map[obj.find("name").text])
+                classes.append(class_map[cls])
 
             return tf.train.Example(features=tf.train.Features(feature={
                 "image/height": dataset_utils.int64_feature(height),
