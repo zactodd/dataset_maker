@@ -113,9 +113,6 @@ class TestAnnotation:
             except AssertionError as e:
                 self.verificationErrors.append(str(e))
 
-    def test_fail(self):
-        self.fail()
-
 
 class TestPascalVOC(TestAnnotation, unittest.TestCase):
     def anno_load(self):
