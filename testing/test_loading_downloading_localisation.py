@@ -109,9 +109,6 @@ class TestAnnotation:
             except AssertionError as e:
                 self.verification_errors.append(str(e))
 
-    def test_tfrecord_give_result(self):
-        self.assertIsNotNone(self.tfrecord_examples)
-
 
 class TestPascalVOC(TestAnnotation, unittest.TestCase):
     def anno_load(self):
