@@ -65,6 +65,102 @@ class TestAnnotation:
     def test_tf_record(self):
         self.assertIsNotNone(self.tf_examples)
 
+    def test_has_images_encode(self):
+        for example in self.tf_examples:
+            result = tf.train.SequenceExample.FromString(example)
+            try:
+                self.assertNotEqual("", str(result.context.feature["image/encoded"]))
+            except AssertionError as e:
+                self.verification_errors.append(str(e))
+
+    def test_has_images_sources_id(self):
+        for example in self.tf_examples:
+            result = tf.train.SequenceExample.FromString(example)
+            try:
+                self.assertNotEqual("", str(result.context.feature["image/sources_id"]))
+            except AssertionError as e:
+                self.verification_errors.append(str(e))
+
+    def test_has_images_filename(self):
+        for example in self.tf_examples:
+            result = tf.train.SequenceExample.FromString(example)
+            try:
+                self.assertNotEqual("", str(result.context.feature["image/filename"]))
+            except AssertionError as e:
+                self.verification_errors.append(str(e))
+
+    def test_has_images_format(self):
+        for example in self.tf_examples:
+            result = tf.train.SequenceExample.FromString(example)
+            try:
+                self.assertNotEqual("", str(result.context.feature["image/format"]))
+            except AssertionError as e:
+                self.verification_errors.append(str(e))
+
+    def test_has_images_width(self):
+        for example in self.tf_examples:
+            result = tf.train.SequenceExample.FromString(example)
+            try:
+                self.assertNotEqual("", str(result.context.feature["image/width"]))
+            except AssertionError as e:
+                self.verification_errors.append(str(e))
+
+    def test_has_images_height(self):
+        for example in self.tf_examples:
+            result = tf.train.SequenceExample.FromString(example)
+            try:
+                self.assertNotEqual("", str(result.context.feature["image/height"]))
+            except AssertionError as e:
+                self.verification_errors.append(str(e))
+
+    def test_has_bbox_xmin(self):
+        for example in self.tf_examples:
+            result = tf.train.SequenceExample.FromString(example)
+            try:
+                self.assertNotEqual("", str(result.context.feature["image/object/bbox/xmin"]))
+            except AssertionError as e:
+                self.verification_errors.append(str(e))
+
+    def test_has_bbox_ymin(self):
+        for example in self.tf_examples:
+            result = tf.train.SequenceExample.FromString(example)
+            try:
+                self.assertNotEqual("", str(result.context.feature["image/object/bbox/ymin"]))
+            except AssertionError as e:
+                self.verification_errors.append(str(e))
+
+    def test_has_bbox_xmax(self):
+        for example in self.tf_examples:
+            result = tf.train.SequenceExample.FromString(example)
+            try:
+                self.assertNotEqual("", str(result.context.feature["image/object/bbox/xmax"]))
+            except AssertionError as e:
+                self.verification_errors.append(str(e))
+
+    def test_has_bbox_ymax(self):
+        for example in self.tf_examples:
+            result = tf.train.SequenceExample.FromString(example)
+            try:
+                self.assertNotEqual("", str(result.context.feature["image/object/bbox/ymax"]))
+            except AssertionError as e:
+                self.verification_errors.append(str(e))
+
+    def test_has_class_text(self):
+        for example in self.tf_examples:
+            result = tf.train.SequenceExample.FromString(example)
+            try:
+                self.assertNotEqual("", str(result.context.feature["image/object/class/text"]))
+            except AssertionError as e:
+                self.verification_errors.append(str(e))
+
+    def test_has_class_label(self):
+        for example in self.tf_examples:
+            result = tf.train.SequenceExample.FromString(example)
+            try:
+                self.assertNotEqual("", str(result.context.feature["image/object/class/label"]))
+            except AssertionError as e:
+                self.verification_errors.append(str(e))
+
     def test_bboxes_y_values(self):
         for example in self.tf_examples:
             result = tf.train.SequenceExample.FromString(example)
