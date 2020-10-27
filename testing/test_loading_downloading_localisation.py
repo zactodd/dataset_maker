@@ -145,6 +145,6 @@ class TestVoTTCSV(TestAnnotation, unittest.TestCase):
         return anno.VoTTCSV()
 
 
-# class TestOIDv4(TestAnnotation, unittest.TestCase):
-#     def anno_load(self):
-#         return anno.OIDv4()
+class TestOIDv4(TestAnnotation, unittest.TestCase):
+    def anno_load(self):
+        return anno.OIDv4()
