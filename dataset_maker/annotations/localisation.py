@@ -44,15 +44,64 @@ class LocalisationAnnotation(ABC):
     def download(download_dir, image_names, images, bboxes, classes) -> None:
         pass
 
-    @staticmethod
-    @abstractmethod
-    def create_tfrecord(image_dir: str, annotations_file: str, output_dir) -> Dict:
-        pass
+    def create_tfrecord(self, image_dir: str, annotations_file: str, output_dir, num_shards=1, class_map=None):
+        filenames, images, bboxes, classes = self.load(image_dir, annotations_file)
+
+        if class_map is None:
+            unique_classes = {cls for cls_per in classes for cls in cls_per}
+            class_map = {cls: idx for idx, cls in enumerate(unique_classes, 1)}
+
+        with contextlib2.ExitStack() as close_stack:
+            output_tfrecords = dataset_utils.open_sharded_output_tfrecords(close_stack, output_dir, num_shards)
+
+            for idx, (filename, image, bbox_per, cls_per) in enumerate(zip(filenames, images, bboxes, classes)):
+                # TODO maybe look into different way or find the common standard
+
+                with tf.io.gfile.GFile(f"{image_dir}/{filename}", "rb") as fid:
+                    encoded_image = fid.read()
+
+                image = Image.fromarray(np.uint8(image * 255))
+                width, height = image.size
+
+                xmins = []
+                xmaxs = []
+                ymins = []
+                ymaxs = []
+                classes_text = []
+                classes = []
+
+                for (y0, x0, y1, x1), cls in zip(bbox_per, cls_per):
+                    ymins.append(float(y0 / height))
+                    xmins.append(float(x0 / width))
+                    ymaxs.append(float(y1 / height))
+                    xmaxs.append(float(x1 / width))
+                    classes_text.append(cls.encode("utf8"))
+                    classes.append(class_map[cls])
+
+                image_format = filename.split(".")[-1].encode("utf8")
+                encode_filename = filename.encode("utf8")
+
+                tf_example = tf.train.Example(features=tf.train.Features(feature={
+                    "image/height": dataset_utils.int64_feature(height),
+                    "image/width": dataset_utils.int64_feature(width),
+                    "image/filename": dataset_utils.bytes_feature(encode_filename),
+                    "image/source_id": dataset_utils.bytes_feature(encode_filename),
+                    "image/encoded": dataset_utils.bytes_feature(encoded_image),
+                    "image/format": dataset_utils.bytes_feature(image_format),
+                    "image/object/bbox/xmin": dataset_utils.float_list_feature(xmins),
+                    "image/object/bbox/xmax": dataset_utils.float_list_feature(xmaxs),
+                    "image/object/bbox/ymin": dataset_utils.float_list_feature(ymins),
+                    "image/object/bbox/ymax": dataset_utils.float_list_feature(ymaxs),
+                    "image/object/class/text": dataset_utils.bytes_list_feature(classes_text),
+                    "image/object/class/label": dataset_utils.int64_list_feature(classes)
+                }))
+
+                shard_idx = idx % num_shards
+                output_tfrecords[shard_idx].write(tf_example.SerializeToString())
 
 
 @strategy_method(LocalisationAnnotationFormats)
-@LocalisationAnnotation.register
-class VGG:
+class VGG(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading VGG annotations. VGG Annotation for use a .json
     format. VGG can have its 'regions' as a dictionary with a full VGG file looking like:
@@ -178,14 +227,9 @@ class VGG:
         with open(f"{download_dir}/vgg_annotations.json", "w") as f:
             json.dump(annotations, f)
 
-    @staticmethod
-    def create_tfrecord(image_dir: str, annotations_file: str, output_dir) -> Dict:
-        pass
-
 
 @strategy_method(LocalisationAnnotationFormats)
-@LocalisationAnnotation.register
-class PascalVOC:
+class PascalVOC(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading Pascal VOC annotations.
     Pascal VOC annotations are xml per image being annotated. For example:
@@ -301,73 +345,72 @@ class PascalVOC:
             with open(f"{download_dir}/{save_name}.xml", "wb") as f:
                 f.write(ElementTree.tostring(root))
 
-    @staticmethod
-    def create_tfrecord(image_dir, annotations_dir, output_path, num_shards=1, class_map=None):
-        def _create_example(image_dir, filename, annotation_path, class_map):
-            with tf.gfile.GFile(f"{image_dir}/{filename}", "rb") as fid:
-                encoded_image = fid.read()
-                encoded_io = io.BytesIO(encoded_image)
-                image = Image.open(encoded_io)
-                width, height = image.size
-
-            encode_filename = filename.encode("utf8")
-            image_format = filename.split(".")[-1].encode("utf8")
-
-            xmins = []
-            xmaxs = []
-            ymins = []
-            ymaxs = []
-            classes_text = []
-            classes = []
-
-            root = ElementTree.parse(annotation_path)
-            for obj in root.findall("object"):
-                bbox = obj.find("bndbox")
-                ymins.append(float(bbox.find("ymin").text) / height)
-                xmins.append(float(bbox.find("xmin").text) / width)
-                ymaxs.append(float(bbox.find("ymax").text) / height)
-                xmaxs.append(float(bbox.find("xmax").text) / width)
-
-                cls = obj.find("name").text
-                classes_text.append(cls.encode("utf8"))
-                classes.append(class_map[cls])
-
-            return tf.train.Example(features=tf.train.Features(feature={
-                "image/height": dataset_utils.int64_feature(height),
-                "image/width": dataset_utils.int64_feature(width),
-                "image/filename": dataset_utils.bytes_feature(encode_filename),
-                "image/source_id": dataset_utils.bytes_feature(encode_filename),
-                "image/encoded": dataset_utils.bytes_feature(encoded_image),
-                "image/format": dataset_utils.bytes_feature(image_format),
-                "image/object/bbox/xmin": dataset_utils.float_list_feature(xmins),
-                "image/object/bbox/xmax": dataset_utils.float_list_feature(xmaxs),
-                "image/object/bbox/ymin": dataset_utils.float_list_feature(ymins),
-                "image/object/bbox/ymax": dataset_utils.float_list_feature(ymaxs),
-                "image/object/class/text": dataset_utils.bytes_list_feature(classes_text),
-                "image/object/class/label": dataset_utils.int64_list_feature(classes)
-            }))
-
-        annotation_files = [f"{annotations_dir}/{f}" for f in os.listdir(annotations_dir) if f.endswith(".xml")]
-
-        if class_map is None:
-            classes = {obj.find("name").text for f in annotation_files
-                       for obj in ElementTree.parse(f).findall("object")}
-            class_map = {cls: idx for idx, cls in enumerate(classes, 1)}
-
-        with contextlib2.ExitStack() as close_stack:
-            output_tfrecords = dataset_utils.open_sharded_output_tfrecords(close_stack, output_path, num_shards)
-
-            for idx, f in enumerate(annotation_files):
-                root = ElementTree.parse(f)
-                image_file = root.find("filename").text
-                tf_example = _create_example(image_dir, image_file, f, class_map)
-                shard_idx = idx % num_shards
-                output_tfrecords[shard_idx].write(tf_example.SerializeToString())
+    # @staticmethod
+    # def create_tfrecord(image_dir, annotations_dir, output_path, num_shards=1, class_map=None):
+    #     def _create_example(image_dir, filename, annotation_path, class_map):
+    #         with tf.gfile.GFile(f"{image_dir}/{filename}", "rb") as fid:
+    #             encoded_image = fid.read()
+    #             encoded_io = io.BytesIO(encoded_image)
+    #             image = Image.open(encoded_io)
+    #             width, height = image.size
+    #
+    #         encode_filename = filename.encode("utf8")
+    #         image_format = filename.split(".")[-1].encode("utf8")
+    #
+    #         xmins = []
+    #         xmaxs = []
+    #         ymins = []
+    #         ymaxs = []
+    #         classes_text = []
+    #         classes = []
+    #
+    #         root = ElementTree.parse(annotation_path)
+    #         for obj in root.findall("object"):
+    #             bbox = obj.find("bndbox")
+    #             ymins.append(float(bbox.find("ymin").text) / height)
+    #             xmins.append(float(bbox.find("xmin").text) / width)
+    #             ymaxs.append(float(bbox.find("ymax").text) / height)
+    #             xmaxs.append(float(bbox.find("xmax").text) / width)
+    #
+    #             cls = obj.find("name").text
+    #             classes_text.append(cls.encode("utf8"))
+    #             classes.append(class_map[cls])
+    #
+    #         return tf.train.Example(features=tf.train.Features(feature={
+    #             "image/height": dataset_utils.int64_feature(height),
+    #             "image/width": dataset_utils.int64_feature(width),
+    #             "image/filename": dataset_utils.bytes_feature(encode_filename),
+    #             "image/source_id": dataset_utils.bytes_feature(encode_filename),
+    #             "image/encoded": dataset_utils.bytes_feature(encoded_image),
+    #             "image/format": dataset_utils.bytes_feature(image_format),
+    #             "image/object/bbox/xmin": dataset_utils.float_list_feature(xmins),
+    #             "image/object/bbox/xmax": dataset_utils.float_list_feature(xmaxs),
+    #             "image/object/bbox/ymin": dataset_utils.float_list_feature(ymins),
+    #             "image/object/bbox/ymax": dataset_utils.float_list_feature(ymaxs),
+    #             "image/object/class/text": dataset_utils.bytes_list_feature(classes_text),
+    #             "image/object/class/label": dataset_utils.int64_list_feature(classes)
+    #         }))
+    #
+    #     annotation_files = [f"{annotations_dir}/{f}" for f in os.listdir(annotations_dir) if f.endswith(".xml")]
+    #
+    #     if class_map is None:
+    #         classes = {obj.find("name").text for f in annotation_files
+    #                    for obj in ElementTree.parse(f).findall("object")}
+    #         class_map = {cls: idx for idx, cls in enumerate(classes, 1)}
+    #
+    #     with contextlib2.ExitStack() as close_stack:
+    #         output_tfrecords = dataset_utils.open_sharded_output_tfrecords(close_stack, output_path, num_shards)
+    #
+    #         for idx, f in enumerate(annotation_files):
+    #             root = ElementTree.parse(f)
+    #             image_file = root.find("filename").text
+    #             tf_example = _create_example(image_dir, image_file, f, class_map)
+    #             shard_idx = idx % num_shards
+    #             output_tfrecords[shard_idx].write(tf_example.SerializeToString())
 
 
 @strategy_method(LocalisationAnnotationFormats)
-@LocalisationAnnotation.register
-class COCO:
+class COCO(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading COCO annotations. COCO Annotation for use a .json
     format. For Example:
@@ -502,14 +545,9 @@ class COCO:
         with open(f"{download_dir}/coco_annotations.json", "w") as f:
             json.dump(data, f)
 
-    @staticmethod
-    def create_tfrecord(image_dir: str, annotations_file: str, output_dir) -> Dict:
-        pass
-
 
 @strategy_method(LocalisationAnnotationFormats)
-@LocalisationAnnotation.register
-class YOLO:
+class YOLO(LocalisationAnnotation):
     """
 
     Localisation Annotation Class for the loading and downloading YOLO annotations.
@@ -600,14 +638,9 @@ class YOLO:
                 for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
                     f.write(f"{classes_dict[cls]} {x0 / w} {y0 / h} {(x1 - x0) / w} {(y1 - y0) / h}\n")
 
-    @staticmethod
-    def create_tfrecord(image_dir: str, annotations_file: str, output_dir) -> Dict:
-        pass
-
 
 @strategy_method(LocalisationAnnotationFormats)
-@LocalisationAnnotation.register
-class OIDv4:
+class OIDv4(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading OIDv4 annotations.
     OIDv4 annotations are txt file per image being annotated. For example:
@@ -663,8 +696,8 @@ class OIDv4:
                     cls, x0, y0, x1, y1 = line.split()
                     bboxes_per.append(np.asarray([y0, x0, y1, x1], dtype="int64"))
                     classes_per.append(cls)
-                bboxes.append(np.asarray(bboxes_per))
-                classes.append(np.asarray(classes_per))
+            bboxes.append(np.asarray(bboxes_per))
+            classes.append(np.asarray(classes_per))
         return names, images, bboxes, classes
 
     @staticmethod
@@ -694,13 +727,8 @@ class OIDv4:
             with open(f"{download_dir}/{save_name}.txt", "w") as f:
                 f.writelines(f"{cls} {x0} {y0} {x1} {y1}\n" for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per))
 
-    @staticmethod
-    def create_tfrecord(image_dir: str, annotations_file: str, output_dir) -> Dict:
-        pass
-
 
 @strategy_method(LocalisationAnnotationFormats)
-@LocalisationAnnotation.register
 class TensorflowObjectDetectionCSV(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading Tensorflow Object Detection CSV annotations.
@@ -798,14 +826,9 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
                         "ymax": y1
                     })
 
-    @staticmethod
-    def create_tfrecord(image_dir: str, annotations_file: str, output_dir) -> Dict:
-        pass
-
 
 @strategy_method(LocalisationAnnotationFormats)
-@LocalisationAnnotation.register
-class IBMCloud:
+class IBMCloud(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading VGG annotations. IBM Cloud uses a .json format.
     For example:
@@ -921,7 +944,6 @@ class IBMCloud:
 
 
 @strategy_method(LocalisationAnnotationFormats)
-@LocalisationAnnotation.register
 class VoTTCSV(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading VoTT CSV annotations.
@@ -1014,10 +1036,6 @@ class VoTTCSV(LocalisationAnnotation):
                         "\"xmax\"": x1,
                         "\"ymax\"": y1
                     })
-
-    @staticmethod
-    def create_tfrecord(image_dir: str, annotations_file: str, output_dir) -> Dict:
-        pass
 
 
 def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir: str,
