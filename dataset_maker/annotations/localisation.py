@@ -46,7 +46,6 @@ class LocalisationAnnotation(ABC):
 
     def create_tfrecord(self, image_dir: str, annotations_file: str, output_dir, num_shards=1, class_map=None):
         filenames, images, bboxes, classes = self.load(image_dir, annotations_file)
-
         if class_map is None:
             unique_classes = {cls for cls_per in classes for cls in cls_per}
             class_map = {cls: idx for idx, cls in enumerate(unique_classes, 1)}
@@ -594,7 +593,7 @@ class YOLO(LocalisationAnnotation):
                 names.append(name)
 
                 image = plt.imread(image_path)
-                images.append(images)
+                images.append(image)
                 w, h, _ = image.shape
 
                 bboxes_per = []
@@ -687,7 +686,7 @@ class OIDv4(LocalisationAnnotation):
                 names.append(name)
 
                 image = plt.imread(image_path)
-                images.append(images)
+                images.append(image)
                 w, h, _ = image.shape
 
                 bboxes_per = []
