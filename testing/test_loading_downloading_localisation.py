@@ -24,8 +24,6 @@ class TestHelper(metaclass=Singleton):
         self.dl_classes = None
         self.dl_names_dict = None
 
-        self.tfrecord_examples = None
-
     def setup_annotation_test(self, annotation):
         if self.annotation != annotation and type(self.annotation) != type(annotation):
             self.annotation = annotation
@@ -46,7 +44,6 @@ class TestHelper(metaclass=Singleton):
                                       zip(self.dl_names, self.dl_images, self.dl_bboxes, self.dl_classes)}
 
 
-
 class TestAnnotation:
     def setUp(self):
         self.verification_errors = []
@@ -65,8 +62,6 @@ class TestAnnotation:
         self.dl_bboxes = th.bboxes
         self.dl_classes = th.classes
         self.dl_names_dict = th.dl_names_dict
-
-        self.tfrecord_examples = th.tfrecord_examples
 
     def tearDown(self):
         self.assertEqual([], self.verification_errors)
