@@ -178,6 +178,10 @@ class VGG:
         with open(f"{download_dir}/vgg_annotations.json", "w") as f:
             json.dump(annotations, f)
 
+    @staticmethod
+    def create_tfrecord(image_dir: str, annotations_file: str, output_dir) -> Dict:
+        pass
+
 
 @strategy_method(LocalisationAnnotationFormats)
 @LocalisationAnnotation.register
@@ -498,6 +502,10 @@ class COCO:
         with open(f"{download_dir}/coco_annotations.json", "w") as f:
             json.dump(data, f)
 
+    @staticmethod
+    def create_tfrecord(image_dir: str, annotations_file: str, output_dir) -> Dict:
+        pass
+
 
 @strategy_method(LocalisationAnnotationFormats)
 @LocalisationAnnotation.register
@@ -592,6 +600,10 @@ class YOLO:
                 for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
                     f.write(f"{classes_dict[cls]} {x0 / w} {y0 / h} {(x1 - x0) / w} {(y1 - y0) / h}\n")
 
+    @staticmethod
+    def create_tfrecord(image_dir: str, annotations_file: str, output_dir) -> Dict:
+        pass
+
 
 @strategy_method(LocalisationAnnotationFormats)
 @LocalisationAnnotation.register
@@ -681,6 +693,10 @@ class OIDv4:
             save_name = reduce(lambda n, fmt: n.strip(fmt), IMAGE_FORMATS, name)
             with open(f"{download_dir}/{save_name}.txt", "w") as f:
                 f.writelines(f"{cls} {x0} {y0} {x1} {y1}\n" for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per))
+
+    @staticmethod
+    def create_tfrecord(image_dir: str, annotations_file: str, output_dir) -> Dict:
+        pass
 
 
 @strategy_method(LocalisationAnnotationFormats)
@@ -781,6 +797,10 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
                         "xmax": x1,
                         "ymax": y1
                     })
+
+    @staticmethod
+    def create_tfrecord(image_dir: str, annotations_file: str, output_dir) -> Dict:
+        pass
 
 
 @strategy_method(LocalisationAnnotationFormats)
@@ -994,6 +1014,10 @@ class VoTTCSV(LocalisationAnnotation):
                         "\"xmax\"": x1,
                         "\"ymax\"": y1
                     })
+
+    @staticmethod
+    def create_tfrecord(image_dir: str, annotations_file: str, output_dir) -> Dict:
+        pass
 
 
 def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir: str,
