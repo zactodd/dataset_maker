@@ -44,6 +44,11 @@ class LocalisationAnnotation(ABC):
     def download(download_dir, image_names, images, bboxes, classes) -> None:
         pass
 
+    @staticmethod
+    @abstractmethod
+    def create_tfrecord(image_dir: str, annotations_file: str, output_dir) -> Dict:
+        pass
+
 
 @strategy_method(LocalisationAnnotationFormats)
 @LocalisationAnnotation.register
@@ -314,10 +319,10 @@ class PascalVOC:
             root = ElementTree.parse(annotation_path)
             for obj in root.findall("object"):
                 bbox = obj.find("bndbox")
-                ymins.append(float(bbox.find("ymin").text))
-                xmins.append(float(bbox.find("xmin").text))
-                ymaxs.append(float(bbox.find("ymax").text))
-                xmaxs.append(float(bbox.find("xmax").text))
+                ymins.append(float(bbox.find("ymin").text) / height)
+                xmins.append(float(bbox.find("xmin").text) / width)
+                ymaxs.append(float(bbox.find("ymax").text) / height)
+                xmaxs.append(float(bbox.find("xmax").text) / width)
 
                 cls = obj.find("name").text
                 classes_text.append(cls.encode("utf8"))
