@@ -46,6 +46,7 @@ class TestHelper(metaclass=Singleton):
                                       zip(self.dl_names, self.dl_images, self.dl_bboxes, self.dl_classes)}
 
 
+
 class TestAnnotation:
     def setUp(self):
         self.verification_errors = []
@@ -87,7 +88,7 @@ class TestAnnotation:
                 dl_bbox = self.dl_names_dict[n][1]
                 self.assertEqual(bbox.shape, dl_bbox.shape)
             except AssertionError as e:
-                self.verificationErrors.append(str(e))
+                self.verification_errors.append(str(e))
 
     def test_same_bboxes(self):
         for n in self.names:
@@ -97,7 +98,7 @@ class TestAnnotation:
                 diff = np.abs(bbox - dl_bbox)
                 self.assertTrue(np.all(diff <= 1), msg=f"The bboxs differ by more than one pixel. \n{bbox}\n{dl_bbox}")
             except AssertionError as e:
-                self.verificationErrors.append(str(e))
+                self.verification_errors.append(str(e))
 
     def test_same_unique_num_classes(self):
         cls_set = {cls for cls_per in self.classes for cls in cls_per}
@@ -111,7 +112,10 @@ class TestAnnotation:
                 dl_classes = self.dl_names_dict[n][2]
                 self.assertEqual(classes.shape, dl_classes.shape)
             except AssertionError as e:
-                self.verificationErrors.append(str(e))
+                self.verification_errors.append(str(e))
+
+    def test_tfrecord_give_result(self):
+        self.assertIsNotNone(self.tfrecord_examples)
 
 
 class TestPascalVOC(TestAnnotation, unittest.TestCase):
@@ -134,11 +138,6 @@ class TestYOLO(TestAnnotation, unittest.TestCase):
         return anno.YOLO()
 
 
-class TestOIDv4(TestAnnotation, unittest.TestCase):
-    def anno_load(self):
-        return anno.OIDv4()
-
-
 class TestTensorflowObjectDetectionCSV(TestAnnotation, unittest.TestCase):
     def anno_load(self):
         return anno.TensorflowObjectDetectionCSV()
@@ -153,3 +152,7 @@ class TestVoTTCSV(TestAnnotation, unittest.TestCase):
     def anno_load(self):
         return anno.VoTTCSV()
 
+
+# class TestOIDv4(TestAnnotation, unittest.TestCase):
+#     def anno_load(self):
+#         return anno.OIDv4()
