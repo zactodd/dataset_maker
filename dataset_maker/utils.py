@@ -1,4 +1,5 @@
 import numpy as np
+import skimage
 from typing import Iterable, Tuple
 
 
@@ -30,3 +31,10 @@ def bbox(x: Iterable[int], y: Iterable[int], out_format: str = "2p") -> Tuple[in
 def bbox_area(y0, x0, y1, x1):
     return (y1 - y0) * (x1 - x0)
 
+
+def mask(x, y, width, height):
+    assert len(x) == len(y), F"Length of both x and and y must be the same ({len(x)} != {len(y)})."
+    m = np.zeros((width, height), dtype=np.uint8)
+    rr, cc = skimage.draw.polygon(y, x)
+    m[rr, cc] = 1
+    return m
