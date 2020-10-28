@@ -2,7 +2,7 @@ import csv
 import hashlib
 from dataset_maker.patterns import SingletonStrategies, strategy_method
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, List, Union
+from typing import Tuple, List, Union
 import numpy as np
 from xml.etree import ElementTree
 import matplotlib.pyplot as plt
@@ -35,7 +35,8 @@ class LocalisationAnnotation(ABC):
 
     @staticmethod
     @abstractmethod
-    def load(image_dir: str, annotations_file: str) -> Dict:
+    def load(image_dir: str, annotations_file: str) -> \
+            Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
         pass
 
     @staticmethod
@@ -66,7 +67,7 @@ class LocalisationAnnotation(ABC):
                 ymins = []
                 ymaxs = []
                 classes_text = []
-                classes = []
+                mapped_classes = []
 
                 for (y0, x0, y1, x1), cls in zip(bbox_per, cls_per):
                     ymins.append(float(y0 / height))
@@ -74,7 +75,7 @@ class LocalisationAnnotation(ABC):
                     ymaxs.append(float(y1 / height))
                     xmaxs.append(float(x1 / width))
                     classes_text.append(cls.encode("utf8"))
-                    classes.append(class_map[cls])
+                    mapped_classes.append(class_map[cls])
 
                 image_format = filename.split(".")[-1].encode("utf8")
                 encode_filename = filename.encode("utf8")
@@ -91,7 +92,7 @@ class LocalisationAnnotation(ABC):
                     "image/object/bbox/ymin": dataset_utils.float_list_feature(ymins),
                     "image/object/bbox/ymax": dataset_utils.float_list_feature(ymaxs),
                     "image/object/class/text": dataset_utils.bytes_list_feature(classes_text),
-                    "image/object/class/label": dataset_utils.int64_list_feature(classes)
+                    "image/object/class/label": dataset_utils.int64_list_feature(mapped_classes)
                 }))
 
                 shard_idx = idx % num_shards
