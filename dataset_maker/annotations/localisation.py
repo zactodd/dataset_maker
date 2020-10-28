@@ -16,7 +16,6 @@ import tensorflow as tf
 from dataset_maker.annotations import dataset_utils
 import contextlib2
 from PIL import Image
-import io
 
 
 IMAGE_FORMATS = (".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG")
