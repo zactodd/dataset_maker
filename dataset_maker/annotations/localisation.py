@@ -210,7 +210,7 @@ class VGG(LocalisationAnnotation):
             name: {
                 "filename": name,
                 "regions": {
-                    str(i): {
+                    f"{i}": {
                         "shape_attributes": {
                             "name": "polygon",
                             "all_points_x": [int(x0), int(x1), int(x1), int(x0)],
