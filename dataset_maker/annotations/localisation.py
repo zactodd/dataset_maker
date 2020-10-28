@@ -344,69 +344,6 @@ class PascalVOC(LocalisationAnnotation):
             with open(f"{download_dir}/{save_name}.xml", "wb") as f:
                 f.write(ElementTree.tostring(root))
 
-    # @staticmethod
-    # def create_tfrecord(image_dir, annotations_dir, output_path, num_shards=1, class_map=None):
-    #     def _create_example(image_dir, filename, annotation_path, class_map):
-    #         with tf.gfile.GFile(f"{image_dir}/{filename}", "rb") as fid:
-    #             encoded_image = fid.read()
-    #             encoded_io = io.BytesIO(encoded_image)
-    #             image = Image.open(encoded_io)
-    #             width, height = image.size
-    #
-    #         encode_filename = filename.encode("utf8")
-    #         image_format = filename.split(".")[-1].encode("utf8")
-    #
-    #         xmins = []
-    #         xmaxs = []
-    #         ymins = []
-    #         ymaxs = []
-    #         classes_text = []
-    #         classes = []
-    #
-    #         root = ElementTree.parse(annotation_path)
-    #         for obj in root.findall("object"):
-    #             bbox = obj.find("bndbox")
-    #             ymins.append(float(bbox.find("ymin").text) / height)
-    #             xmins.append(float(bbox.find("xmin").text) / width)
-    #             ymaxs.append(float(bbox.find("ymax").text) / height)
-    #             xmaxs.append(float(bbox.find("xmax").text) / width)
-    #
-    #             cls = obj.find("name").text
-    #             classes_text.append(cls.encode("utf8"))
-    #             classes.append(class_map[cls])
-    #
-    #         return tf.train.Example(features=tf.train.Features(feature={
-    #             "image/height": dataset_utils.int64_feature(height),
-    #             "image/width": dataset_utils.int64_feature(width),
-    #             "image/filename": dataset_utils.bytes_feature(encode_filename),
-    #             "image/source_id": dataset_utils.bytes_feature(encode_filename),
-    #             "image/encoded": dataset_utils.bytes_feature(encoded_image),
-    #             "image/format": dataset_utils.bytes_feature(image_format),
-    #             "image/object/bbox/xmin": dataset_utils.float_list_feature(xmins),
-    #             "image/object/bbox/xmax": dataset_utils.float_list_feature(xmaxs),
-    #             "image/object/bbox/ymin": dataset_utils.float_list_feature(ymins),
-    #             "image/object/bbox/ymax": dataset_utils.float_list_feature(ymaxs),
-    #             "image/object/class/text": dataset_utils.bytes_list_feature(classes_text),
-    #             "image/object/class/label": dataset_utils.int64_list_feature(classes)
-    #         }))
-    #
-    #     annotation_files = [f"{annotations_dir}/{f}" for f in os.listdir(annotations_dir) if f.endswith(".xml")]
-    #
-    #     if class_map is None:
-    #         classes = {obj.find("name").text for f in annotation_files
-    #                    for obj in ElementTree.parse(f).findall("object")}
-    #         class_map = {cls: idx for idx, cls in enumerate(classes, 1)}
-    #
-    #     with contextlib2.ExitStack() as close_stack:
-    #         output_tfrecords = dataset_utils.open_sharded_output_tfrecords(close_stack, output_path, num_shards)
-    #
-    #         for idx, f in enumerate(annotation_files):
-    #             root = ElementTree.parse(f)
-    #             image_file = root.find("filename").text
-    #             tf_example = _create_example(image_dir, image_file, f, class_map)
-    #             shard_idx = idx % num_shards
-    #             output_tfrecords[shard_idx].write(tf_example.SerializeToString())
-
 
 @strategy_method(LocalisationAnnotationFormats)
 class COCO(LocalisationAnnotation):
