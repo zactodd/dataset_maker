@@ -2,7 +2,7 @@ import csv
 import hashlib
 from dataset_maker.patterns import SingletonStrategies, strategy_method
 from abc import ABC, abstractmethod
-from typing import Tuple, List, Union
+from typing import Tuple, List, Union, Dict, Optional
 import numpy as np
 from xml.etree import ElementTree
 import matplotlib.pyplot as plt
@@ -44,14 +44,39 @@ class LocalisationAnnotation(ABC):
     def download(download_dir, image_names, images, bboxes, classes) -> None:
         pass
 
-    def create_tfrecord(self, image_dir: str, annotations_file: str, output_dir, num_shards=1, class_map=None):
+    def create_tfrecord(self, image_dir: str, annotations_file: str, output_dir:str, num_shards:int = 1,
+                        shard_splits: Optional[Tuple[float]] = None, split_names=Optional[Tuple[str]],
+                        class_map: Optional[Dict[str, int]] = None) -> None:
+        """
+        Creates tfrecords from localisation annotations.
+        :param image_dir: The image directory.
+        :param annotations_file: The location of the annotations or the specific annotations file.
+        :param output_dir: THe output directory for the annotations file.
+        :param num_shards: THe number of tfrecord files.
+        :param shard_splits: The ratio in which the file shards are being split.
+        :param split_names: The names of the split shards
+        :param class_map: A map of classes to there encoded values by default it will create a map like:
+            class_map = {cls: idx for idx, cls in enumerate(unique_classes, 1)}
+        """
         filenames, images, bboxes, classes = self.load(image_dir, annotations_file)
         if class_map is None:
             unique_classes = {cls for cls_per in classes for cls in cls_per}
             class_map = {cls: idx for idx, cls in enumerate(unique_classes, 1)}
 
         with contextlib2.ExitStack() as close_stack:
-            output_tfrecords = dataset_utils.open_sharded_output_tfrecords(close_stack, output_dir, num_shards)
+            if shard_splits is not None:
+                assert sum(shard_splits) == 1.0, \
+                    f"The sum of shard_splits must equal 1, (sum(shard_splits) = {sum(shard_splits)})."
+                assert split_names is None or (len(shard_splits) == len(split_names)), \
+                    f"The length of shard_splits and split_names most be the same " \
+                    f"({len(shard_splits)} != {len(split_names)})."
+
+                if split_names is None:
+                    split_names = [f"split_{i}" for i in range(len(shard_splits))]
+
+                output_tfrecords = dataset_utils.open_sharded_output_tfrecords_with_splits(close_stack, output_dir, num_shards, shard_splits, split_names)
+            else:
+                output_tfrecords = dataset_utils.open_sharded_output_tfrecords(close_stack, output_dir, num_shards)
 
             for idx, (filename, image, bbox_per, cls_per) in enumerate(zip(filenames, images, bboxes, classes)):
                 # TODO maybe look into different way or find the common standard
