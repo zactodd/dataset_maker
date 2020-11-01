@@ -38,7 +38,7 @@ class SingleSquare(DatasetMaker):
             bbox = y0, x0, y1, x1 = self.rand_square()
             image[x0:x1, y0:y1] = (255, 0, 0)
             images.append(image)
-            bboxes.append(np.asarray(bbox))
+            bboxes.append([np.asarray(bbox)])
         return images, bboxes
 
     def rand_square(self):
@@ -61,7 +61,7 @@ class MaskSingleSquare(SingleSquare):
             bbox = y0, x0, y1, x1 = self.rand_square()
             image[x0:x1, y0:y1] = (1, 0, 0)
             images.append(image)
-            bboxes.append(np.asarray(bbox))
+            bboxes.append(np.asarray([bbox]))
             masks.append((image == (1, 0, 0)).all(axis=2))
         return images, bboxes, masks
 
@@ -92,8 +92,8 @@ class MulticlassSingleSquare(SingleSquare):
 
 
 class MultipleSquares(SingleSquare):
-    def __init__(self, min_n_per_image=1, max_n_per_image=3, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, min_n_per_image=1, max_n_per_image=3, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         assert min_n_per_image <= max_n_per_image, \
             "Min examples per image must be less or equal than the max examples per image"
         self.min_n_per_image = min_n_per_image
