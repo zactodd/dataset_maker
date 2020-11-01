@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 
 
 def int64_feature(value):
@@ -25,4 +26,14 @@ def open_sharded_output_tfrecords(exit_stack, base_path, num_shards):
     return [
         exit_stack.enter_context(tf.python_io.TFRecordWriter(f"{base_path}-{idx:05d}-of-{num_shards:05d}"))
         for idx in range(1, num_shards + 1)
+    ]
+
+
+def open_sharded_output_tfrecords_with_splits(exit_stack, base_path, num_shards, shard_splits, split_names):
+    splits = [int((sum(shard_splits[:i]) + a) * num_shards) for i, a in enumerate(shard_splits)]
+    return [
+        exit_stack.enter_context(
+            tf.python_io.TFRecordWriter(f"{base_path}/{split_names[sidx]}-{idx:05d}-of-{num_shards:05d}")
+        )
+        for sidx, s in enumerate(np.split(np.arange(1, num_shards), splits)) for idx in s
     ]
