@@ -48,6 +48,24 @@ class SingleSquare(DatasetMaker):
         return y0, x0, y0 + square_width, x0 + square_width
 
 
+class MaskSingleSquare(SingleSquare):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def make(self, n_samples: int):
+        images = []
+        bboxes = []
+        masks = []
+        for _ in range(n_samples):
+            image = self._BASE_IMAGE.copy()
+            bbox = y0, x0, y1, x1 = self.rand_square()
+            image[x0:x1, y0:y1] = (1, 0, 0)
+            images.append(image)
+            bboxes.append(np.asarray(bbox))
+            masks.append((image == (1, 0, 0)).all(axis=2))
+        return images, bboxes, masks
+
+
 class MulticlassSingleSquare(SingleSquare):
     def __init__(self, n_classes=3, **kwargs):
         super().__init__(**kwargs)
