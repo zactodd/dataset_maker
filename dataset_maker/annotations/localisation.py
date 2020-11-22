@@ -132,7 +132,7 @@ class VGG(LocalisationAnnotation):
     {
         "image_1.png": {
                 "regions": {
-                        0: {
+                        "0": {
                             "shape_attributes": {
                                 "name": "polygon",
                                 "all_points_x": [0, 25, 25, 0],
@@ -395,7 +395,7 @@ class COCO(LocalisationAnnotation):
                     "bbox": [87.281, 708.408, 1416.71826, 1307.59],
                     "area":796574.87632
                 }
-            ]
+            ],
             "categories": [
                 {
                     "id": 1,
