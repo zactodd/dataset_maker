@@ -142,12 +142,13 @@ class VGG(InstanceSegmentationAnnotation):
     """
 
     @staticmethod
-    def load(image_dir: str, annotations_dir: str) -> \
+    def load(image_dir: str, annotations_dir: str, region_label: str = "label") -> \
             Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
         """
         Loads a VGG file and gets the names, images bounding boxes and classes for thr image.
         :param image_dir: THe directory of where the images are stored.
         :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
+        :param region_label: The key that identifies the the label being loaded.
         :return: Returns names, images bounding boxes and classes
             The names will be a list of strings.
             The images will be a list of np.ndarray with the shapes (w, h, d).
@@ -194,7 +195,7 @@ class VGG(InstanceSegmentationAnnotation):
                 bbox = utils.bbox(xs, ys)
                 bboxes_per.append(np.asarray(bbox))
                 masks_per.append(utils.mask(xs, ys, w, h))
-                classes_per.append(r["region_attributes"]["label"])
+                classes_per.append(r["region_attributes"][region_label])
             bboxes.append(np.asarray(bboxes_per))
             masks.append(np.asarray(masks_per))
             classes.append(np.asarray(classes_per))
