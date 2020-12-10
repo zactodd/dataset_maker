@@ -159,12 +159,13 @@ class VGG(LocalisationAnnotation):
     }
     """
     @staticmethod
-    def load(image_dir: str, annotations_dir: str) -> \
+    def load(image_dir: str, annotations_dir: str, region_label: str = "label") -> \
             Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
         """
         Loads a VGG file and gets the names, images bounding boxes and classes for thr image.
         :param image_dir: THe directory of where the images are stored.
         :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
+        :param region_label: The key that identifies the label being loaded.
         :return: Returns names, images bounding boxes and classes
             The names will be a list of strings.
             The images will be a list of np.ndarray with the shapes (w, h, d).
@@ -204,7 +205,7 @@ class VGG(LocalisationAnnotation):
             for r in regions:
                 bbox = utils.bbox(r["shape_attributes"]["all_points_x"], r["shape_attributes"]["all_points_y"])
                 bboxes_per.append(np.asarray(bbox))
-                classes_per.append(r["region_attributes"]["label"])
+                classes_per.append(r["region_attributes"][region_label])
             bboxes.append(np.asarray(bboxes_per))
             classes.append(np.asarray(classes_per))
         return names, images, bboxes, classes
