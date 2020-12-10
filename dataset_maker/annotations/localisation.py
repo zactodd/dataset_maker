@@ -180,9 +180,9 @@ class VGG(LocalisationAnnotation):
         else:
             potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".json")]
             assert len(potential_annotations) != 0, \
-                f"Theres is no annotations .json file in {annotations_dir}."
+                f"There is no annotations .json file in {annotations_dir}."
             assert len(potential_annotations) == 1, \
-                f"Theres are too many annotations .json files in {annotations_dir}."
+                f"There are too many annotations .json files in {annotations_dir}."
             annotations_file = potential_annotations[0]
         with open(f"{annotations_dir}/{annotations_file}", "r") as f:
             annotations = json.load(f)
@@ -426,9 +426,9 @@ class COCO(LocalisationAnnotation):
         else:
             potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".json")]
             assert len(potential_annotations) != 0, \
-                f"Theres is no annotations .json file in {annotations_dir}."
+                f"There is no annotations .json file in {annotations_dir}."
             assert len(potential_annotations) == 1, \
-                f"Theres are too many annotations .json files in {annotations_dir}."
+                f"There are too many annotations .json files in {annotations_dir}."
             annotations_file = potential_annotations[0]
         with open(f"{annotations_dir}/{annotations_file}", "r") as f:
             annotations = json.load(f)
@@ -547,9 +547,9 @@ class YOLO(LocalisationAnnotation):
                         potential_images.append(image_path)
 
                 assert len(potential_images) != 0, \
-                    f"Theres is no image file in {image_dir} corresponding to the YOLO file {file_path}."
+                    f"There is no image file in {image_dir} corresponding to the YOLO file {file_path}."
                 assert len(potential_images) == 1, \
-                    f"Theres are too many image file in {image_dir} corresponding to the YOLO file {file_path}."
+                    f"There are too many image file in {image_dir} corresponding to the YOLO file {file_path}."
 
                 image_path = potential_images[0]
                 name = re.split("/|\\\\", image_path)[-1]
@@ -640,9 +640,9 @@ class OIDv4(LocalisationAnnotation):
                         potential_images.append(image_path)
 
                 assert len(potential_images) != 0, \
-                    f"Theres is no image file in {image_dir} corresponding to the YOLO file {file_path}."
+                    f"There is no image file in {image_dir} corresponding to the YOLO file {file_path}."
                 assert len(potential_images) == 1, \
-                    f"Theres are too many image file in {image_dir} corresponding to the YOLO file {file_path}."
+                    f"There are too many image file in {image_dir} corresponding to the YOLO file {file_path}."
 
                 image_path = potential_images[0]
                 name = re.split("/|\\\\", image_path)[-1]
@@ -724,9 +724,9 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
         else:
             potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".csv")]
             assert len(potential_annotations) != 0, \
-                f"Theres is no annotations .json file in {annotations_dir}."
+                f"There is no annotations .json file in {annotations_dir}."
             assert len(potential_annotations) == 1, \
-                f"Theres are too many annotations .json files in {annotations_dir}."
+                f"There are too many annotations .json files in {annotations_dir}."
             annotations_file = potential_annotations[0]
 
         image_dict = defaultdict(lambda: {"bboxes": [], "classes": []})
@@ -832,9 +832,9 @@ class IBMCloud(LocalisationAnnotation):
         else:
             potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".json")]
             assert len(potential_annotations) != 0, \
-                f"Theres is no annotations .json file in {annotations_dir}."
+                f"There is no annotations .json file in {annotations_dir}."
             assert len(potential_annotations) == 1, \
-                f"Theres are too many annotations .json files in {annotations_dir}."
+                f"There are too many annotations .json files in {annotations_dir}."
             annotations_file = potential_annotations[0]
         with open(f"{annotations_dir}/{annotations_file}", "r") as f:
             annotations = json.load(f)
