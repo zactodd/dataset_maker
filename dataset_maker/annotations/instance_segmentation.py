@@ -163,9 +163,9 @@ class VGG(InstanceSegmentationAnnotation):
         else:
             potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".json")]
             assert len(potential_annotations) != 0, \
-                f"Theres is no annotations .json file in {annotations_dir}."
+                f"There is no annotations .json file in {annotations_dir}."
             assert len(potential_annotations) == 1, \
-                f"Theres are too many annotations .json files in {annotations_dir}."
+                f"There are too many annotations .json files in {annotations_dir}."
             annotations_file = potential_annotations[0]
         with open(f"{annotations_dir}/{annotations_file}", "r") as f:
             annotations = json.load(f)
