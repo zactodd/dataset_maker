@@ -155,8 +155,8 @@ class VGG(InstanceSegmentationAnnotation):
             The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
             format [y0, x0, y1, x1].
             The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
-        :raise ValueError: If there is more than one json file in the directory of :param annotations_dir.
-        :raise ValueError: If there is no json file in the directory of :param annotations_dir.
+        :raise RuntimeError: If there is more than one json file in the directory of :param annotations_dir.
+        :raise RuntimeError: If there is no json file in the directory of :param annotations_dir.
         """
         if annotations_dir.endswith(".json"):
             annotations_file = annotations_dir
@@ -214,7 +214,7 @@ class VGG(InstanceSegmentationAnnotation):
         :param masks:
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
             n being the number of bounding boxes for the image.
-        :raise ValueError: The length of the params :param image_names, :param images :param bboxes and :param classes
+        :raise RuntimeError: The length of the params :param image_names, :param images :param bboxes and :param classes
             must be the same.
         """
         assert len(image_names) == len(images) == len(bboxes) == len(classes), \
