@@ -248,7 +248,7 @@ class VGG(LocalisationAnnotation):
                     for i, ((y0, x0, y1, x1), cls) in enumerate(zip(bboxes_per, classes_per))
                 }
             }
-            for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes)
+            for name, bboxes_per, classes_per in zip(image_names, bboxes, classes)
         }
         with open(f"{download_dir}/vgg_annotations.json", "w") as f:
             json.dump(annotations, f)
@@ -999,6 +999,118 @@ class VoTTCSV(LocalisationAnnotation):
                         "\"xmax\"": x1,
                         "\"ymax\"": y1
                     })
+
+
+@strategy_method(LocalisationAnnotationFormats)
+class CreateML(LocalisationAnnotation):
+    """
+    Localisation Annotation Class for the loading and downloading CreateML annotations.
+    CreateML annotations is a json file. For example:
+    [
+        {
+            "image": "0001.jpg",
+            "annotations": [
+                {
+                    "label": "tablesaw",
+                    "coordinates": {
+                        "x": 162.5,
+                        "y": 45,
+                        "width": 79,
+                        "height": 88
+                    }
+                },
+            ]
+        }
+    ]
+    """
+
+    @staticmethod
+    def load(image_dir: str, annotations_dir: str) -> \
+            Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+        """
+        Loads a CreateML json file and gets the names, images bounding boxes and classes for thr image.
+        :param image_dir: THe directory of where the images are stored.
+        :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
+        :return: Returns names, images bounding boxes and classes
+            The names will be a list of strings.
+            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
+            format [y0, x0, y1, x1].
+            The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
+        :raise RuntimeError: If there is more than one json file in the directory of :param annotations_dir.
+        :raise RuntimeError: If there is no json file in the directory of :param annotations_dir.
+        """
+        if annotations_dir.endswith(".json"):
+            annotations_file = annotations_dir
+        else:
+            potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".json")]
+            assert len(potential_annotations) != 0, \
+                f"There is no annotations .json file in {annotations_dir}."
+            assert len(potential_annotations) == 1, \
+                f"There are too many annotations .json files in {annotations_dir}."
+            annotations_file = potential_annotations[0]
+        with open(f"{annotations_dir}/{annotations_file}", "r") as f:
+            annotations = json.load(f)
+
+        names = []
+        images = []
+        bboxes = []
+        classes = []
+        for info in annotations:
+            name = info["image"]
+            names.append(name)
+            images.append(images.append(plt.imread(f"{image_dir}/{name}")))
+            bboxes_per = []
+            classes_per = []
+            for a in info["annotations"]:
+                coords = a["coordinates"]
+                x, y, dy, dx = coords["x"], coords["y"], coords["width"], coords["width"]
+                bboxes_per.append(np.asarray([y, x, y + dy, x + dx]))
+                classes_per.append(a["label"])
+            bboxes.append(np.asarray(bboxes_per))
+            classes.append(np.asarray(classes_per))
+        return names, images, bboxes, classes
+
+    @staticmethod
+    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+                 classes: List[np.ndarray]) -> None:
+        """
+        Downloads a CreateML json file to the :param download_dir with the filename annotations.
+        :param download_dir: The directory where the annotations are being downloaded.
+        :param image_names: The filenames of the image in the annotations. A list of strings.
+        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
+            n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
+        :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
+            n being the number of bounding boxes for the image.
+        :raise RuntimeError: The length of the params :param image_names, :param images :param bboxes and :param classes
+            must be the same.
+        """
+        assert len(image_names) == len(images) == len(bboxes) == len(classes), \
+            "The params image_names, images bboxes and classes must have the same length." \
+            f"len(image_names): {len(image_names)}\n" \
+            f"len(images): {len(images)}\n" \
+            f"len(bboxes): {len(bboxes)}\n" \
+            f"len(classes): {len(classes)}"
+
+        annotations = [
+            {
+                "image": f"{download_dir}/{name}",
+                "annotations": [
+                    {
+                        "label": cls,
+                        "coordinates": {"x": x0, "y": y0, "width": x1 - x0, "height": y1 - y0}
+
+                    }
+                    for (y0, x0, y1, x1), cls in zip(bbox_per, classes_per)
+                ]
+            }
+            for name, bbox_per, classes_per in zip(image_names, bboxes, classes)
+        ]
+
+        with open(f"{download_dir}/vgg_annotations.json", "w") as f:
+            json.dump(annotations, f)
+
 
 
 def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir: str,
