@@ -39,14 +39,14 @@ class Strategies:
         """
         self.strategies[name.lower()] = (name, class_reference)
 
-    def get(self, name: str, **kwargs) -> Any:
+    def get(self, name: str, *args, **kwargs) -> Any:
         """
         Get the strategy class and initialised an instance of that class.
         :param name: The name of the strategy the lowercase value of the name is the key.
         :param kwargs: Extra class specific information.
         :return: The initialised strategy class.
         """
-        return self.strategies[name.lower()][1](**kwargs)
+        return self.strategies[name.lower()][1](*args, **kwargs)
 
 
 class SingletonStrategies(Strategies, metaclass=Singleton):
