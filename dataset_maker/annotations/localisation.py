@@ -1112,7 +1112,6 @@ class CreateML(LocalisationAnnotation):
             json.dump(annotations, f)
 
 
-
 def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir: str,
                               in_format: Union[LocalisationAnnotation, str],
                               out_format: Union[LocalisationAnnotation, str]) -> None:
