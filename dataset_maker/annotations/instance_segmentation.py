@@ -24,7 +24,8 @@ class InstanceSegmentationAnnotationFormats(SingletonStrategies):
         super().__init__()
 
     def __str__(self):
-        return "Annotations formats: \n" + "\n".join([f"{i:3}: {k}" for i, k in enumerate(self.strategies.keys())])
+        return "Annotations formats: \n" + \
+               "\n".join([f"{i:3}: {n}" for i, (n, _) in enumerate(self.strategies.values())])
 
 
 class InstanceSegmentationAnnotation(ABC):
