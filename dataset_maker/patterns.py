@@ -1,6 +1,6 @@
 from abc import ABCMeta
 from dataset_maker.types_utils import F
-from typing import Type
+from typing import Type, Any
 
 
 class Singleton(type):
@@ -31,22 +31,22 @@ class Strategies:
     def __init__(self):
         self.strategies = {}
 
-    def add(self, k: str, class_reference: object) -> None:
+    def add(self, name: str, class_reference: object) -> None:
         """
-        Use this class to add a method to the image loader.
-        :param k: The key to set the ImageLoader class.
+        Use this class to add a strategy to Strategies class .
+        :param name: The name of the strategy the lowercase value of the will act as the key.
         :param class_reference: the class of the image loader.
         """
-        self.strategies[k] = class_reference
+        self.strategies[name.lower()] = (name, class_reference)
 
-    def get(self, k: str, **kwargs) -> object:
+    def get(self, name: str, **kwargs) -> Any:
         """
         Get the strategy class and initialised an instance of that class.
-        :param k: The key for the strategy class.
+        :param name: The name of the strategy the lowercase value of the name is the key.
         :param kwargs: Extra class specific information.
         :return: The initialised strategy class.
         """
-        return self.strategies[k](**kwargs)
+        return self.strategies[name.lower()][1](**kwargs)
 
 
 class SingletonStrategies(Strategies, metaclass=Singleton):
