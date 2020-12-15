@@ -1,5 +1,6 @@
 import numpy as np
 import skimage
+import pycocotools
 from typing import Iterable, Tuple
 
 
@@ -32,9 +33,14 @@ def bbox_area(y0, x0, y1, x1):
     return (y1 - y0) * (x1 - x0)
 
 
-def mask(x, y, width, height):
-    assert len(x) == len(y), F"Length of both x and and y must be the same ({len(x)} != {len(y)})."
+def polygon_to_mask(x, y, width, height):
+    assert len(x) == len(y), f"Length of both x and and y must be the same ({len(x)} != {len(y)})."
     m = np.zeros((width, height), dtype=np.uint8)
     rr, cc = skimage.draw.polygon(y, x)
     m[rr, cc] = 1
     return m
+
+
+def rle_to_mask(rle):
+    compressed_rle = pycocotools.mask.frPyObjects(rle, *rle["size"])
+    return pycocotools.mask.decode(compressed_rle)
