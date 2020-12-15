@@ -9,4 +9,4 @@ matplotlib
 opencv-python
 pandas
 contextlib2
-pycocotools
+#pycocotools

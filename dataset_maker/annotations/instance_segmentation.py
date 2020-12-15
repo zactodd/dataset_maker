@@ -267,8 +267,10 @@ class COCO(InstanceSegmentationAnnotation):
 
             h, w, *_ = image_dict[idx]["image"].shape
 
+            # TODO Implement workflow to allow pycocotools to be installed
             if annotation["iscrowd"]:
-                mask = utils.rle_to_mask(annotation["segmentation"])
+                raise NotImplementedError()
+                # mask = utils.rle_to_mask(annotation["segmentation"])
             else:
                 segmentation = annotation["segmentation"][0]
                 x, y = segmentation[::2], segmentation[1::2]

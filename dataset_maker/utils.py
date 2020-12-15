@@ -1,6 +1,6 @@
 import numpy as np
 import skimage
-import pycocotools
+# import pycocotools
 from typing import Iterable, Tuple
 
 
@@ -41,6 +41,7 @@ def polygon_to_mask(x, y, width, height):
     return m
 
 
-def rle_to_mask(rle):
-    compressed_rle = pycocotools.mask.frPyObjects(rle, *rle["size"])
-    return pycocotools.mask.decode(compressed_rle)
+# TODO Implement workflow to allow pycocotools to be installed
+# def rle_to_mask(rle):
+#     compressed_rle = pycocotools.mask.frPyObjects(rle, *rle["size"])
+#     return pycocotools.mask.decode(compressed_rle)
