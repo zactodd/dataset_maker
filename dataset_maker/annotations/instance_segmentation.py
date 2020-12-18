@@ -1,7 +1,6 @@
-import csv
-import hashlib
+from dataset_maker.annotations.download_upload import Loader
 from dataset_maker.patterns import SingletonStrategies, strategy_method
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from typing import Tuple, List
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,6 +15,9 @@ from PIL import Image
 
 
 class InstanceSegmentationAnnotationFormats(SingletonStrategies):
+    """
+   Singleton for holding instance segmentation annotation formats.
+   """
     def __init__(self):
         super().__init__()
 
@@ -24,13 +26,16 @@ class InstanceSegmentationAnnotationFormats(SingletonStrategies):
                "\n".join([f"{i:3}: {n}" for i, (n, _) in enumerate(self.strategies.values())])
 
 
-class InstanceSegmentationAnnotation(ABC):
+class InstanceSegmentationAnnotation(Loader, metaclass=ABCMeta):
+    """
+    Abstract base class for InstanceSegmentationAnnotation as a Loader.
+    """
     def __init__(self):
-        pass
+        super().__init__()
 
     @staticmethod
     @abstractmethod
-    def load(image_dir: str, annotations_file: str) ->\
+    def load(image_dir: str, annotations_file: str) -> \
             Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
         pass
 
@@ -198,24 +203,6 @@ class VGG(InstanceSegmentationAnnotation):
             classes.append(np.asarray(classes_per))
         return names, images, bboxes, masks, classes
 
-    @staticmethod
-    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
-                 masks: List[np.ndarray], classes: List[np.ndarray]) -> None:
-        """
-        Downloads a VGG json file to the :param download_dir with the filename annotations.
-        :param download_dir: The directory where the annotations are being downloaded.
-        :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
-        :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
-            n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
-        :param masks:
-        :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
-            n being the number of bounding boxes for the image.
-        :raise AssertionError: The length of the params :param image_names, :param images :param bboxes and :param classes
-            must be the same.
-        """
-        pass
-
 
 @strategy_method(InstanceSegmentationAnnotationFormats)
 class COCO(InstanceSegmentationAnnotation):
@@ -290,22 +277,3 @@ class COCO(InstanceSegmentationAnnotation):
             masks.append(info["masks"])
             classes.append(np.asarray(info["classes"]))
         return names, images, masks, bboxes, classes
-
-    @staticmethod
-    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
-                 masks: List[np.ndarray], classes: List[np.ndarray]) -> None:
-        """
-        Downloads a COCO json file to the :param download_dir with the filename annotations.
-        :param download_dir: The directory where the annotations are being downloaded.
-        :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
-        :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
-            n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
-        :param masks:
-        :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
-            n being the number of bounding boxes for the image.
-        :raise AssertionError: The length of the params :param image_names, :param images :param bboxes and :param classes
-            must be the same.
-        """
-        pass
-
