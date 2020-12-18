@@ -12,4 +12,6 @@
 |  | VoTT CSV | :heavy_check_mark: | :heavy_check_mark: |
 |  | CreateML | :heavy_check_mark: | :heavy_check_mark: |
 | **Instance Segemenation** | VGG VIA | :heavy_check_mark: | :x: |
-| | COCO | :heavy_check_mark: | :x: |
+| | COCO | :heavy_check_mark:*[1] | :x: |
+
+[1] Does no work on crowd data.
