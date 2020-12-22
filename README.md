@@ -1,4 +1,5 @@
 # Dataset Maker
+![Build Status](https://github.com/lhy110/dataset_maker/workflows/build/badge.svg)
 ## Labled data conversion:
 | Problem | Method | Import | Export |
 | :---: | :---: | :---: | :---: |
