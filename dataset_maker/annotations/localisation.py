@@ -1,7 +1,8 @@
 import csv
 import hashlib
 from dataset_maker.patterns import SingletonStrategies, strategy_method
-from abc import ABC, abstractmethod
+from dataset_maker.annotations.download_upload import LoaderDownloader
+from abc import ABCMeta, abstractmethod
 from typing import Tuple, List, Union, Dict, Optional
 import numpy as np
 from xml.etree import ElementTree
@@ -22,17 +23,11 @@ IMAGE_FORMATS = (".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG")
 
 
 class LocalisationAnnotationFormats(SingletonStrategies):
+    """
+    Singleton for holding localisation annotation formats.
+    """
     def __init__(self):
         super().__init__()
-
-    def __str__(self):
-        return "Annotations formats: \n" + \
-               "\n".join([f"{i:3}: {n}" for i, (n, _) in enumerate(self.strategies.values())])
-
-
-class LocalisationAnnotation(ABC):
-    def __init__(self):
-        pass
 
     @staticmethod
     @abstractmethod
@@ -44,6 +39,18 @@ class LocalisationAnnotation(ABC):
     @abstractmethod
     def download(download_dir, image_names, images, bboxes, classes) -> None:
         pass
+
+    def __str__(self):
+        return "Annotations formats: \n" + \
+               "\n".join([f"{i:3}: {n}" for i, (n, _) in enumerate(self.strategies.values())])
+
+
+class LocalisationAnnotation(LoaderDownloader, metaclass=ABCMeta):
+    """
+    Abstract base class for LocalisationAnnotation as a LoaderDownloader.
+    """
+    def __init__(self) -> None:
+        super().__init__()
 
     def create_tfrecord(self, image_dir: str, annotations_file: str, output_dir:str, num_shards:int = 1,
                         shard_splits: Optional[Tuple[float]] = None, split_names=Optional[Tuple[str]],
