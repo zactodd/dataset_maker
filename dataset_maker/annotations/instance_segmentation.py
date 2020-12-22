@@ -40,7 +40,7 @@ class InstanceSegmentationAnnotation(ABC):
         pass
 
     def create_tfrecord(self, image_dir: str, annotations_file: str, output_dir, num_shards=1, class_map=None):
-        filenames, images, bboxes, masks, classes = self.load(image_dir, annotations_file)
+        filenames, images, bboxes, polygons, classes = self.load(image_dir, annotations_file)
         if class_map is None:
             unique_classes = {cls for cls_per in classes for cls in cls_per}
             class_map = {cls: idx for idx, cls in enumerate(unique_classes, 1)}
@@ -48,8 +48,8 @@ class InstanceSegmentationAnnotation(ABC):
         with contextlib2.ExitStack() as close_stack:
             output_tfrecords = dataset_utils.open_sharded_output_tfrecords(close_stack, output_dir, num_shards)
 
-            for idx, (filename, image, bbox_per, mask_per, cls_per) in \
-                    enumerate(zip(filenames, images, bboxes, masks, classes)):
+            for idx, (filename, image, bbox_per, poly_per, cls_per) in \
+                    enumerate(zip(filenames, images, bboxes, polygons, classes)):
                 # TODO maybe look into different way or find the common standard
 
                 with tf.io.gfile.GFile(f"{image_dir}/{filename}", "rb") as fid:
@@ -66,12 +66,13 @@ class InstanceSegmentationAnnotation(ABC):
                 classes_text = []
                 mapped_classes = []
 
-                for (y0, x0, y1, x1), mask, cls in zip(bbox_per, mask_per, cls_per):
+                for (y0, x0, y1, x1), poly, cls in zip(bbox_per, poly_per, cls_per):
                     ymins.append(float(y0 / height))
                     xmins.append(float(x0 / width))
                     ymaxs.append(float(y1 / height))
                     xmaxs.append(float(x1 / width))
 
+                    mask = utils.polygon_to_mask(*poly, width, height)
                     mask_image = Image.fromarray(mask)
                     output = io.BytesIO()
                     mask_image.save(output, format='PNG')
@@ -96,7 +97,7 @@ class InstanceSegmentationAnnotation(ABC):
                     "image/object/bbox/ymax": dataset_utils.float_list_feature(ymaxs),
                     "image/object/class/text": dataset_utils.bytes_list_feature(classes_text),
                     "image/object/class/label": dataset_utils.int64_list_feature(mapped_classes),
-                    "image/object/mask": dataset_utils.bytes_list_feature(masks)
+                    "image/object/mask": dataset_utils.bytes_list_feature(encode_masks)
                 }))
 
                 shard_idx = idx % num_shards
@@ -170,7 +171,7 @@ class VGG(InstanceSegmentationAnnotation):
         names = []
         images = []
         bboxes = []
-        masks = []
+        polygons = []
         classes = []
         for filename, annotation in annotations.items():
             names.append(filename)
@@ -180,7 +181,7 @@ class VGG(InstanceSegmentationAnnotation):
             images.append(image)
 
             bboxes_per = []
-            masks_per = []
+            poly_per = []
             classes_per = []
 
             regions = annotation["regions"]
@@ -191,12 +192,12 @@ class VGG(InstanceSegmentationAnnotation):
                 xs, ys = r["shape_attributes"]["all_points_x"], r["shape_attributes"]["all_points_y"]
                 bbox = utils.bbox(xs, ys)
                 bboxes_per.append(np.asarray(bbox))
-                masks_per.append(utils.polygon_to_mask(xs, ys, w, h))
+                poly_per.append((xs, ys))
                 classes_per.append(r["region_attributes"][region_label])
             bboxes.append(np.asarray(bboxes_per))
-            masks.append(np.asarray(masks_per))
+            polygons.append(np.asarray(poly_per))
             classes.append(np.asarray(classes_per))
-        return names, images, bboxes, masks, classes
+        return names, images, bboxes, polygons, classes
 
     @staticmethod
     def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
@@ -253,7 +254,7 @@ class COCO(InstanceSegmentationAnnotation):
             image_info["id"]: {
                 "bboxes": [],
                 "classes": [],
-                "masks": [],
+                "polygons": [],
                 "name": image_info["filename"],
                 "image": plt.imread(f"{image_dir}/{image_info['filename']}")
             }
@@ -270,26 +271,25 @@ class COCO(InstanceSegmentationAnnotation):
             # TODO Implement workflow to allow pycocotools to be installed
             if annotation["iscrowd"]:
                 raise NotImplementedError()
-                # mask = utils.rle_to_mask(annotation["segmentation"])
             else:
                 segmentation = annotation["segmentation"][0]
                 x, y = segmentation[::2], segmentation[1::2]
-                mask = utils.polygon_to_mask(x, y, w, h)
-            image_dict[idx]["masks"].append(mask)
+                poly = (x, y)
+            image_dict[idx]["polygons"].append(poly)
 
         names = []
         images = []
         bboxes = []
-        masks = []
+        polygons = []
         classes = []
         for info in image_dict.values():
             name = info["name"]
             names.append(name)
             images.append(info["image"])
             bboxes.append(np.asarray(info["bboxes"]))
-            masks.append(info["masks"])
+            polygons.append(info["polygon"])
             classes.append(np.asarray(info["classes"]))
-        return names, images, masks, bboxes, classes
+        return names, images, polygons, bboxes, classes
 
     @staticmethod
     def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
