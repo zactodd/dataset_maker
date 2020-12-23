@@ -16,4 +16,4 @@
 | **Instance Segemenation** | VGG VIA | :heavy_check_mark: | :heavy_check_mark: |
 | | COCO*[1]  | :heavy_check_mark: | :heavy_check_mark: |
 
-[1] Does no work on crowd data.
+[1] Does not work on crowd data.
