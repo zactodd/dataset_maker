@@ -413,6 +413,7 @@ class COCO(LocalisationAnnotation):
             ]
         }
     """
+
     @staticmethod
     def load(image_dir: str, annotations_dir: str) -> \
             Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:

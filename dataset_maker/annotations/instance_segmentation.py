@@ -1,4 +1,4 @@
-from dataset_maker.annotations.download_upload import Loader
+from dataset_maker.annotations.download_upload import LoaderDownloader
 from dataset_maker.patterns import SingletonStrategies, strategy_method
 from abc import ABCMeta, abstractmethod
 from typing import Tuple, List
@@ -26,7 +26,7 @@ class InstanceSegmentationAnnotationFormats(SingletonStrategies):
                "\n".join([f"{i:3}: {n}" for i, (n, _) in enumerate(self.strategies.values())])
 
 
-class InstanceSegmentationAnnotation(Loader, metaclass=ABCMeta):
+class InstanceSegmentationAnnotation(LoaderDownloader, metaclass=ABCMeta):
     """
     Abstract base class for InstanceSegmentationAnnotation as a Loader.
     """
@@ -41,7 +41,7 @@ class InstanceSegmentationAnnotation(Loader, metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def download(download_dir, image_names, images, bboxes, masks, classes) -> None:
+    def download(download_dir, image_names, images, bboxes, polygons, classes) -> None:
         pass
 
     def create_tfrecord(self, image_dir: str, annotations_file: str, output_dir, num_shards=1, class_map=None):
@@ -112,7 +112,7 @@ class InstanceSegmentationAnnotation(Loader, metaclass=ABCMeta):
 @strategy_method(InstanceSegmentationAnnotationFormats)
 class VGG(InstanceSegmentationAnnotation):
     """
-    Instance Segmenation Annotation Class for the loading and downloading VGG annotations. VGG Annotation for use a .json
+    Instance Segmentation Annotation Class for the loading and downloading VGG annotations. VGG Annotation for use a .json
     format. VGG can have its 'regions' as a dictionary with a full VGG file looking like:
     {
         "image_1.png": {
@@ -204,9 +204,66 @@ class VGG(InstanceSegmentationAnnotation):
             classes.append(np.asarray(classes_per))
         return names, images, bboxes, polygons, classes
 
+    @staticmethod
+    def download(download_dir, image_names, images, bboxes, polygon, classes) -> None:
+        assert len(image_names) == len(images) == len(bboxes) == len(polygon) == len(classes), \
+            "The params image_names, images, bboxes, polygons and classes must have the same length." \
+            f"len(image_names): {len(image_names)}\n" \
+            f"len(images): {len(images)}\n" \
+            f"len(bboxes): {len(bboxes)}\n" \
+            f"len(polygons): {len(polygon)}" \
+            f"len(classes): {len(classes)}"
+        annotations = {
+            name: {
+                "regions": [
+                    {
+                        "shape_attributes": {"name": "polygon", "all_points_x": xs, "all_points_y": ys},
+                        "region_attributes": {"label": str(cls)}
+                    }
+                    for cls, (xs, ys) in zip(classes_per, poly_per)
+                ]
+            }
+            for name, image, poly_per, classes_per in zip(image_names, images, polygon, classes)
+        }
+        with open(f"{download_dir}/vgg_annotations.json", "w") as f:
+            json.dump(annotations, f)
+
 
 @strategy_method(InstanceSegmentationAnnotationFormats)
 class COCO(InstanceSegmentationAnnotation):
+    """
+    Instance Segmentation Annotation Class for the loading and downloading COCO annotations. COCO Annotation for use a .json
+    format. For Example:
+    {
+        "info": {
+            "images": [
+                {
+                    "id": 1,
+                    "width": 1504,
+                    "height": 2016,
+                    "file_name": "image_1.jpg"
+                }
+            ],
+            "annotations": [
+                {
+                    "id": 0,
+                    "iscrowd": 0,
+                    "image_id": 1,
+                    "category_id": 1,
+                    "segmentation":[[87.281, 708.408, 1416.71826, 1307.59]],
+                    "bbox": [87.281, 708.408, 1416.71826, 1307.59],
+                    "area":796574.87632
+                }
+            ],
+            "categories": [
+                {
+                    "id": 1,
+                    "name": "laptop"
+                }
+            ]
+        }
+    """
+
     @staticmethod
     def load(image_dir: str, annotations_dir: str) ->\
             Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
@@ -277,3 +334,42 @@ class COCO(InstanceSegmentationAnnotation):
             polygons.append(info["polygon"])
             classes.append(np.asarray(info["classes"]))
         return names, images, polygons, bboxes, classes
+
+    @staticmethod
+    def download(download_dir, image_names, images, bboxes, polygons, classes) -> None:
+        assert len(image_names) == len(images) == len(bboxes) == len(polygons) == len(classes), \
+            "The params image_names, images, bboxes, polygons and classes must have the same length." \
+            f"len(image_names): {len(image_names)}\n" \
+            f"len(images): {len(images)}\n" \
+            f"len(bboxes): {len(bboxes)}\n" \
+            f"len(polygons): {len(polygons)}" \
+            f"len(classes): {len(classes)}"
+
+        classes_dict = {n: i for i, n in enumerate({cls for classes_per in classes for cls in classes_per}, 1)}
+        annotation_idx = 0
+        images_info = []
+        annotations_info = []
+        for img_idx, (name, image, bboxes_per, poly_per, classes_per) in \
+                enumerate(zip(image_names, images, bboxes, polygons, classes), 1):
+            w, h, _ = image.shape
+            images_info.append({"id": img_idx, "filename": name, "width": int(w), "height": int(h)})
+            for (y0, x0, y1, x1), (xs, ys), cls in zip(bboxes_per, poly_per, classes_per):
+                bbox = [float(x0), float(y0), float(x1), float(y1)]
+                annotations_info.append({
+                    "id": annotation_idx,
+                    "image_id": img_idx,
+                    "category": classes_dict[cls],
+                    "iscrowd": 0,
+                    "segmentation": [[*xs, *ys]],
+                    "bbox": bbox,
+                    "area": float(utils.bbox_area(y0, x0, y1, x1))
+                })
+                annotation_idx += 1
+
+        data = {
+            "images": images_info,
+            "annotations": annotations_info,
+            "categories": [{"id": cat_idx, "name": str(cls)} for cls, cat_idx in classes_dict.items()]
+        }
+        with open(f"{download_dir}/coco_annotations.json", "w") as f:
+            json.dump(data, f)
