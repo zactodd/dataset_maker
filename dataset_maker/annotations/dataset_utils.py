@@ -1,5 +1,7 @@
 import tensorflow as tf
 import numpy as np
+import contextlib2
+from typing import List
 
 
 def int64_feature(value):
@@ -22,14 +24,43 @@ def float_list_feature(value):
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
 
-def open_sharded_output_tfrecords(exit_stack, base_path, num_shards):
+def open_sharded_tfrecords(exit_stack: contextlib2.ExitStack, base_path: str, num_shards: int) \
+        -> List[contextlib2.ExitStack]:
+    """
+    Open exits stacks to enable the writing of files over several shards.
+    :param exit_stack: THe stack to communicate where the shard is being written.
+    :param base_path: The base path for the shard path.
+    :param num_shards: The number of shards being created.
+    :return: List of exit stacks to store where each the shards are being written.
+    """
     return [
         exit_stack.enter_context(tf.python_io.TFRecordWriter(f"{base_path}-{idx:05d}-of-{num_shards:05d}"))
         for idx in range(1, num_shards + 1)
     ]
 
 
-def open_sharded_output_tfrecords_with_splits(exit_stack, base_path, num_shards, shard_splits, split_names):
+def open_sharded_tfrecords_with_splits(exit_stack: contextlib2.ExitStack, base_path: str, num_shards: int,
+                                       shard_splits: List[float], split_names: List[str]) \
+        -> List[contextlib2.ExitStack]:
+    """
+    Open exits stacks to enable the writing of files over several shards.
+    :param exit_stack: THe stack to communicate where the shard is being written.
+    :param base_path: The base path for the shard path.
+    :param num_shards: The number of shards being created.
+    :param shard_splits: The ratios at which the shards are split.
+    :param split_names: The names of each the shard splits.
+    :return: List of exit stacks to store where each the shards are being written.
+    :raise AssertionError: If the sum of the ratios is less than 1.
+    :raise AssertionError: If there are less names then the number of splits.
+    """
+    assert sum(shard_splits) <= 1.0, \
+        f"The sum of shard_split need to be less than or equal 1. (! {sum(shard_splits)} <= 1.0)"
+    if split_names is not None:
+        assert len(split_names) >= len(shard_splits), \
+            "There need to be more shard names then there shards to be named if they are to be named."
+    else:
+        split_names = [f"split_{i}" for i in range(len(shard_splits))]
+
     splits = [int((sum(shard_splits[:i]) + a) * num_shards) for i, a in enumerate(shard_splits)]
     return [
         exit_stack.enter_context(

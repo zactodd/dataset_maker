@@ -51,7 +51,7 @@ class InstanceSegmentationAnnotation(LoaderDownloader, metaclass=ABCMeta):
             class_map = {cls: idx for idx, cls in enumerate(unique_classes, 1)}
 
         with contextlib2.ExitStack() as close_stack:
-            output_tfrecords = dataset_utils.open_sharded_output_tfrecords(close_stack, output_dir, num_shards)
+            output_tfrecords = dataset_utils.open_sharded_tfrecords(close_stack, output_dir, num_shards)
 
             for idx, (filename, image, bbox_per, poly_per, cls_per) in \
                     enumerate(zip(filenames, images, bboxes, polygons, classes)):

@@ -82,9 +82,9 @@ class LocalisationAnnotation(LoaderDownloader, metaclass=ABCMeta):
                 if split_names is None:
                     split_names = [f"split_{i}" for i in range(len(shard_splits))]
 
-                output_tfrecords = dataset_utils.open_sharded_output_tfrecords_with_splits(close_stack, output_dir, num_shards, shard_splits, split_names)
+                output_tfrecords = dataset_utils.open_sharded_tfrecords_with_splits(close_stack, output_dir, num_shards, shard_splits, split_names)
             else:
-                output_tfrecords = dataset_utils.open_sharded_output_tfrecords(close_stack, output_dir, num_shards)
+                output_tfrecords = dataset_utils.open_sharded_tfrecords(close_stack, output_dir, num_shards)
 
             for idx, (filename, image, bbox_per, cls_per) in enumerate(zip(filenames, images, bboxes, classes)):
                 # TODO maybe look into different way or find the common standard
@@ -1129,7 +1129,9 @@ def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir
     :param annotations_dir: The directory of the annotations file.
     :param download_dir: The directory where the annotations are being downloaded.
     :param in_format: The name of the format being converted from.
-    :param out_format: THe name of the format being converted to.
+    :param out_format: The name of the format being converted to.
+    :raise AssertionError: If in_format is not string or LocalisationAnnotation.
+    :raise AssertionError: If out_format is not string or LocalisationAnnotation.
     """
     assert isinstance(in_format, (LocalisationAnnotation, str)), \
         f"in_format: {in_format} need to string or LocalisationAnnotation."
@@ -1144,3 +1146,30 @@ def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir
 
     out_format.download(download_dir, *in_format.load(image_dir, annotations_dir))
 
+
+def convert_annotation_tf_record(image_dir: str, annotations_dir: str,  download_dir: str,
+                                 annotation_format: Union[LocalisationAnnotation, str], num_shard=1,
+                                 shard_splits: Optional[Tuple[float]] = None, split_names: Optional[Tuple[str]] = None,
+                                 class_map: Optional[Dict[str, int]] = None) -> None:
+    """
+    Converts localisation annotation format to tf record..
+    :param image_dir: THe directory of where the images are stored.
+    :param annotations_dir: The directory of the annotations file.
+    :param annotation_format: The format of the annotation format being converted.
+    :param download_dir: The directory where the annotations are being downloaded.
+    :param num_shards: THe number of tfrecord files.
+    :param shard_splits: The ratio in which the file shards are being split.
+    :param split_names: The names of the split shards
+    :param class_map: A map of classes to there encoded values by default it will create a map like:
+        class_map = {cls: idx for idx, cls in enumerate(unique_classes, 1)}
+    :raise AssertionError: If annotation_format is not string or LocalisationAnnotation.
+    """
+
+    assert isinstance(annotation_format, (LocalisationAnnotation, str)), \
+        f"in_format: {annotation_format} need to string or LocalisationAnnotation."
+
+    if isinstance(annotation_format, str):
+        annotation_format = LocalisationAnnotationFormats.get(annotation_format)
+
+    annotation_format.create_tfrecord(image_dir, annotations_dir, download_dir, num_shard, shard_splits,
+                                      split_names, class_map)
