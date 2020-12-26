@@ -1,7 +1,7 @@
 from dataset_maker.annotations.download_upload import LoaderDownloader
 from dataset_maker.patterns import SingletonStrategies, strategy_method
 from abc import ABCMeta, abstractmethod
-from typing import Tuple, List
+from typing import Tuple, List, Union
 import numpy as np
 import matplotlib.pyplot as plt
 from dataset_maker import utils
@@ -373,3 +373,7 @@ class COCO(InstanceSegmentationAnnotation):
         }
         with open(f"{download_dir}/coco_annotations.json", "w") as f:
             json.dump(data, f)
+
+
+convert_annotation_format = dataset_utils.annotation_format_converter(InstanceSegmentationAnnotation,
+                                                                      InstanceSegmentationAnnotationFormats)

@@ -68,3 +68,31 @@ def open_sharded_tfrecords_with_splits(exit_stack: contextlib2.ExitStack, base_p
         )
         for sidx, s in enumerate(np.split(np.arange(1, num_shards), splits)) for idx in s
     ]
+
+
+def annotation_format_converter(t, singleton_stragies):
+    def wrapper(image_dir, annotations_dir, download_dir, in_format, out_format) -> None:
+        """
+        Converts annotation from one format to another.
+        :param image_dir: THe directory of where the images are stored.
+        :param annotations_dir: The directory of the annotations file.
+        :param download_dir: The directory where the annotations are being downloaded.
+        :param in_format: The name of the format being converted from.
+        :param out_format: The name of the format being converted to.
+        :raise AssertionError: If in_format is not string or InstanceSegmentationAnnotation.
+        :raise AssertionError: If out_format is not string or InstanceSegmentationAnnotation.
+        """
+        assert isinstance(in_format, (t, str)), \
+            f"in_format: {in_format} need to string or {t}."
+        assert isinstance(out_format, (t, str)), \
+            f"out_format: {out_format} need to string or InstanceSegmentationAnnotation."
+
+        if isinstance(in_format, str):
+            in_format = singleton_stragies.get(in_format)
+
+        if isinstance(out_format, str):
+            out_format = singleton_stragies.get(out_format)
+
+        out_format.download(download_dir, *in_format.load(image_dir, annotations_dir))
+    return wrapper
+
