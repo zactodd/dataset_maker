@@ -17,3 +17,13 @@
 | | COCO*[1]  | :heavy_check_mark: | :heavy_check_mark: |
 
 [1] Does not work on crowd data.
+
+Conversion script can be aceess using the following
+```bash
+python datasetmaker/scripts/localisation_format_conversion.py image_dir annotation_dir download_dir in_format out_format
+```
+
+For example:
+```bash
+python datasetmaker/scripts/localisation_format_conversion.py images annotations new_annoations COCO YOLO
+```
