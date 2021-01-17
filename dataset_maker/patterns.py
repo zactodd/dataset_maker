@@ -18,15 +18,6 @@ class Singleton(type):
         return cls._instance
 
 
-class PolymorphicSingleton(ABCMeta, Singleton):
-    """
-    Defines a polymorphic instance operation that lets clients access its unique
-    instance.
-    """
-    def __init__(cls, name, bases, attrs, **kwargs):
-        super().__init__(name, bases, attrs, **kwargs)
-
-
 class Strategies:
     def __init__(self):
         self.strategies = {}
