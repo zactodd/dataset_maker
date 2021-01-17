@@ -6,7 +6,7 @@
 | :---: | :---: | :---: | :---: |
 | **Object Detection** | VGG VIA | :heavy_check_mark: |  :heavy_check_mark: |
 |  | YOLO | :heavy_check_mark: | :heavy_check_mark: |
-|  | COCO*[1]  | :heavy_check_mark: | :heavy_check_mark: |
+|  | COCO | :heavy_check_mark: | :heavy_check_mark: |
 |  | Pascal VOC | :heavy_check_mark: | :heavy_check_mark: |
 |  | Tensorflow Object Detection CSV | :heavy_check_mark: | :heavy_check_mark: |
 |  | OIDv4 | :heavy_check_mark: | :heavy_check_mark: |
