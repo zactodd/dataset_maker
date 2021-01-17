@@ -1,7 +1,7 @@
 from dataset_maker.annotations.download_upload import LoaderDownloader
 from dataset_maker.patterns import SingletonStrategies, strategy_method
 from abc import ABCMeta, abstractmethod
-from typing import Tuple, List, Union
+from typing import Tuple, List
 import numpy as np
 import matplotlib.pyplot as plt
 from dataset_maker import utils
@@ -9,7 +9,7 @@ import json
 import os
 import io
 import tensorflow as tf
-from dataset_maker.annotations import dataset_utils
+from dataset_maker.annotations import dataset_utils, vgg_utils
 import contextlib2
 from PIL import Image
 
@@ -172,6 +172,7 @@ class VGG(InstanceSegmentationAnnotation):
             annotations_file = potential_annotations[0]
         with open(f"{annotations_dir}/{annotations_file}", "r") as f:
             annotations = json.load(f)
+            annotations = vgg_utils.convert_annotations_to_polygon(annotations)
 
         names = []
         images = []

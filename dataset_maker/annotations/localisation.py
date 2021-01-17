@@ -14,7 +14,7 @@ import re
 import os
 from collections import defaultdict
 import tensorflow as tf
-from dataset_maker.annotations import dataset_utils
+from dataset_maker.annotations import dataset_utils, vgg_utils
 import contextlib2
 from PIL import Image
 
@@ -194,6 +194,7 @@ class VGG(LocalisationAnnotation):
             annotations_file = potential_annotations[0]
         with open(f"{annotations_dir}/{annotations_file}", "r") as f:
             annotations = json.load(f)
+            annotations = vgg_utils.convert_annotations_to_polygon(annotations)
 
         names = []
         images = []
