@@ -224,7 +224,7 @@ class VGG(InstanceSegmentationAnnotation):
             name: {
                 "regions": [
                     {
-                        "shape_attributes": {"name": "polygon", "all_points_x": xs, "all_points_y": ys},
+                        "shape_attributes": {"name": "polygon", "all_points_x": int(xs), "all_points_y": int(ys)},
                         "region_attributes": {"label": str(cls)}
                     }
                     for cls, (xs, ys) in zip(classes_per, poly_per)
@@ -378,7 +378,7 @@ class COCO(InstanceSegmentationAnnotation):
         data = {
             "images": images_info,
             "annotations": annotations_info,
-            "categories": [{"id": cat_idx, "name": str(cls)} for cls, cat_idx in classes_dict.items()]
+            "categories": [{"id": int(cat_idx), "name": str(cls)} for cls, cat_idx in classes_dict.items()]
         }
         with open(f"{download_dir}/coco_annotations.json", "w") as f:
             json.dump(data, f)
