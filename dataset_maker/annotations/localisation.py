@@ -45,6 +45,9 @@ class LocalisationAnnotationFormats(SingletonStrategies):
                "\n".join([f"{i:3}: {n}" for i, (n, _) in enumerate(self.strategies.values())])
 
 
+FORMATS = LocalisationAnnotationFormats()
+
+
 class LocalisationAnnotation(LoaderDownloader, metaclass=ABCMeta):
     """
     Abstract base class for LocalisationAnnotation as a LoaderDownloader.
@@ -192,7 +195,9 @@ class VGG(LocalisationAnnotation):
             assert len(potential_annotations) == 1, \
                 f"There are too many annotations .json files in {annotations_dir}."
             annotations_file = potential_annotations[0]
-        with open(f"{annotations_dir}/{annotations_file}", "r") as f:
+            annotations_file = f"{annotations_dir}/{annotations_file}"
+
+        with open(annotations_file, "r") as f:
             annotations = json.load(f)
             annotations = vgg_utils.convert_annotations_to_polygon(annotations)
 
@@ -440,7 +445,9 @@ class COCO(LocalisationAnnotation):
             assert len(potential_annotations) == 1, \
                 f"There are too many annotations .json files in {annotations_dir}."
             annotations_file = potential_annotations[0]
-        with open(f"{annotations_dir}/{annotations_file}", "r") as f:
+            annotations_file = f"{annotations_dir}/{annotations_file}"
+
+        with open(annotations_file, "r") as f:
             annotations = json.load(f)
 
         classes_dict = {cls_info["id"]: cls_info["name"] for cls_info in annotations["categories"]}
@@ -734,10 +741,12 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
         else:
             potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".csv")]
             assert len(potential_annotations) != 0, \
-                f"There is no annotations .json file in {annotations_dir}."
+                f"There is no annotations .csv file in {annotations_dir}."
             assert len(potential_annotations) == 1, \
-                f"There are too many annotations .json files in {annotations_dir}."
+                f"There are too many annotations .csv files in {annotations_dir}."
             annotations_file = potential_annotations[0]
+            annotations_file = f"{annotations_dir}/{annotations_file}"
+
 
         image_dict = defaultdict(lambda: {"bboxes": [], "classes": []})
         with open(f"{annotations_dir}/{annotations_file}", "r") as f:
@@ -846,7 +855,9 @@ class IBMCloud(LocalisationAnnotation):
             assert len(potential_annotations) == 1, \
                 f"There are too many annotations .json files in {annotations_dir}."
             annotations_file = potential_annotations[0]
-        with open(f"{annotations_dir}/{annotations_file}", "r") as f:
+            annotations_file = f"{annotations_dir}/{annotations_file}"
+
+        with open(annotations_file, "r") as f:
             annotations = json.load(f)
 
         names = []
@@ -947,10 +958,11 @@ class VoTTCSV(LocalisationAnnotation):
         else:
             potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".csv")]
             assert len(potential_annotations) != 0, \
-                f"Theres is no annotations .json file in {annotations_dir}."
+                f"There is no annotations .csv file in {annotations_dir}."
             assert len(potential_annotations) == 1, \
-                f"Theres are too many annotations .json files in {annotations_dir}."
+                f"There are too many annotations .csv files in {annotations_dir}."
             annotations_file = potential_annotations[0]
+            annotations_file = f"{annotations_dir}/{annotations_file}"
 
         image_dict = defaultdict(lambda: {"bboxes": [], "classes": []})
         with open(f"{annotations_dir}/{annotations_file}", "r") as f:
@@ -1058,7 +1070,9 @@ class CreateML(LocalisationAnnotation):
             assert len(potential_annotations) == 1, \
                 f"There are too many annotations .json files in {annotations_dir}."
             annotations_file = potential_annotations[0]
-        with open(f"{annotations_dir}/{annotations_file}", "r") as f:
+            annotations_file = f"{annotations_dir}/{annotations_file}"
+
+        with open(annotations_file, "r") as f:
             annotations = json.load(f)
 
         names = []
@@ -1149,7 +1163,7 @@ def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir
 
 
 convert_annotation_format = dataset_utils.annotation_format_converter(LocalisationAnnotation,
-                                                                      LocalisationAnnotationFormats)
+                                                                      FORMATS)
 
 
 def convert_annotation_tf_record(image_dir: str, annotations_dir: str,  download_dir: str,
