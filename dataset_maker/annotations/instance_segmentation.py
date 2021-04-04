@@ -366,25 +366,29 @@ class COCO(InstanceSegmentationAnnotation):
             w, h, _ = image.shape
             images_info.append({"id": img_idx, "file_name": str(name), "width": int(w), "height": int(h)})
             for (y0, x0, y1, x1), (xs, ys), cls in zip(bboxes_per, poly_per, classes_per):
-                bbox = [float(x0), float(y0), float(x1), float(y1)]
+                bbox = [int(x0), int(y0), int(x1), int(y1)]
                 xs = [int(x) for x in xs]
                 ys = [int(y) for y in ys]
 
                 annotations_info.append({
                     "id": annotation_idx,
                     "image_id": img_idx,
-                    "category": classes_dict[cls],
+                    "category_id": classes_dict[cls],
                     "iscrowd": 0,
                     "segmentation": [[*xs, *ys]],
                     "bbox": bbox,
-                    "area": float(utils.bbox_area(y0, x0, y1, x1))
+                    "area": int(utils.bbox_area(y0, x0, y1, x1))
                 })
                 annotation_idx += 1
 
         data = {
             "images": images_info,
             "annotations": annotations_info,
-            "categories": [{"id": int(cat_idx), "name": str(cls)} for cls, cat_idx in classes_dict.items()]
+            "categories": [{
+                "id": int(cat_idx),
+                "name": str(cls),
+                "supercategory": "type"
+            } for cls, cat_idx in classes_dict.items()]
         }
         with open(f"{download_dir}/coco_annotations.json", "w") as f:
             json.dump(data, f)
