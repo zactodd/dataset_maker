@@ -224,7 +224,10 @@ class VGG(InstanceSegmentationAnnotation):
             name: {
                 "regions": [
                     {
-                        "shape_attributes": {"name": "polygon", "all_points_x": int(xs), "all_points_y": int(ys)},
+                        "shape_attributes": {
+                            "name": "polygon",
+                            "all_points_x": [int(x) for x in xs],
+                            "all_points_y": [int(y) for y in ys]},
                         "region_attributes": {"label": str(cls)}
                     }
                     for cls, (xs, ys) in zip(classes_per, poly_per)
@@ -361,7 +364,7 @@ class COCO(InstanceSegmentationAnnotation):
         for img_idx, (name, image, bboxes_per, poly_per, classes_per) in \
                 enumerate(zip(image_names, images, bboxes, polygons, classes), 1):
             w, h, _ = image.shape
-            images_info.append({"id": img_idx, "filename": str(name), "width": int(w), "height": int(h)})
+            images_info.append({"id": img_idx, "file_name": str(name), "width": int(w), "height": int(h)})
             for (y0, x0, y1, x1), (xs, ys), cls in zip(bboxes_per, poly_per, classes_per):
                 bbox = [float(x0), float(y0), float(x1), float(y1)]
                 xs = [int(x) for x in xs]
