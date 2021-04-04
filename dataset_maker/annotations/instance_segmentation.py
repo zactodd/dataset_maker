@@ -26,6 +26,9 @@ class InstanceSegmentationAnnotationFormats(SingletonStrategies):
                "\n".join([f"{i:3}: {n}" for i, (n, _) in enumerate(self.strategies.values())])
 
 
+FORMATS = InstanceSegmentationAnnotationFormats()
+
+
 class InstanceSegmentationAnnotation(LoaderDownloader, metaclass=ABCMeta):
     """
     Abstract base class for InstanceSegmentationAnnotation as a Loader.
@@ -170,7 +173,9 @@ class VGG(InstanceSegmentationAnnotation):
             assert len(potential_annotations) == 1, \
                 f"There are too many annotations .json files in {annotations_dir}."
             annotations_file = potential_annotations[0]
-        with open(f"{annotations_dir}/{annotations_file}", "r") as f:
+            annotations_file = f"{annotations_dir}/{annotations_file}"
+
+        with open(annotations_file, "r") as f:
             annotations = json.load(f)
             annotations = vgg_utils.convert_annotations_to_polygon(annotations)
 
@@ -179,7 +184,8 @@ class VGG(InstanceSegmentationAnnotation):
         bboxes = []
         polygons = []
         classes = []
-        for filename, annotation in annotations.items():
+        for annotation in annotations.values():
+            filename = annotation["filename"]
             names.append(filename)
 
             image = plt.imread(f"{image_dir}/{filename}")
@@ -290,7 +296,9 @@ class COCO(InstanceSegmentationAnnotation):
             assert len(potential_annotations) == 1, \
                 f"There are too many annotations .json files in {annotations_dir}."
             annotations_file = potential_annotations[0]
-        with open(f"{annotations_dir}/{annotations_file}", "r") as f:
+            annotations_file = f"{annotations_dir}/{annotations_file}"
+
+        with open(annotations_file, "r") as f:
             annotations = json.load(f)
 
         classes_dict = {cls_info["id"]: cls_info["name"] for cls_info in annotations["categories"]}
@@ -376,5 +384,4 @@ class COCO(InstanceSegmentationAnnotation):
             json.dump(data, f)
 
 
-convert_annotation_format = dataset_utils.annotation_format_converter(InstanceSegmentationAnnotation,
-                                                                      InstanceSegmentationAnnotationFormats)
+convert_annotation_format = dataset_utils.annotation_format_converter(InstanceSegmentationAnnotation, FORMATS)
