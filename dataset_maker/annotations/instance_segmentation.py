@@ -364,18 +364,16 @@ class COCO(InstanceSegmentationAnnotation):
         annotations_info = []
         for img_idx, (name, image, bboxes_per, poly_per, classes_per) in \
                 enumerate(zip(image_names, images, bboxes, polygons, classes), 1):
-            w, h, _ = image.shape
+            h, w, _ = image.shape
             images_info.append({"id": img_idx, "file_name": str(name), "width": int(w), "height": int(h)})
             for (y0, x0, y1, x1), (xs, ys), cls in zip(bboxes_per, poly_per, classes_per):
-                bbox = [int(x0), int(y0), int(x1 - x0), int(y1 - y0)]
-
                 annotations_info.append({
                     "id": annotation_idx,
                     "image_id": img_idx,
                     "category_id": classes_dict[cls],
                     "iscrowd": 0,
                     "segmentation": [[int(p) for ps in zip(xs, ys) for p in ps]],
-                    "bbox": bbox,
+                    "bbox": [int(x0), int(y0), int(x1 - x0), int(y1 - y0)],
                     "area": int(utils.bbox_area(y0, x0, y1, x1))
                 })
                 annotation_idx += 1
