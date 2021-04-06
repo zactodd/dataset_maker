@@ -463,7 +463,7 @@ class COCO(LocalisationAnnotation):
             x1, y1 = x0 + bb_width, y0 + bb_height
 
             image_dict[idx]["bboxes"].append(np.asarray([y0, x0, y1, x1], dtype="int64"))
-            image_dict[idx]["classes"].append(classes_dict[annotation["category"]])
+            image_dict[idx]["classes"].append(classes_dict[annotation["category_id"]])
 
         names = []
         images = []
@@ -511,7 +511,7 @@ class COCO(LocalisationAnnotation):
                 annotations_info.append({
                     "id": annotation_idx,
                     "image_id": img_idx,
-                    "category": str(classes_dict[cls]),
+                    "category_id": str(classes_dict[cls]),
                     "iscrowd": 0,
                     "segmentation": [bbox],
                     "bbox": bbox,
@@ -577,7 +577,7 @@ class YOLO(LocalisationAnnotation):
 
                 image = plt.imread(image_path)
                 images.append(image)
-                w, h, _ = image.shape
+                h, w, _ = image.shape
 
                 bboxes_per = []
                 classes_per = []
@@ -670,7 +670,7 @@ class OIDv4(LocalisationAnnotation):
 
                 image = plt.imread(image_path)
                 images.append(image)
-                w, h, _ = image.shape
+                h, w, _ = image.shape
 
                 bboxes_per = []
                 classes_per = []
@@ -797,7 +797,7 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
-                w, h, _ = image.shape
+                h, w, _ = image.shape
                 for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
                     writer.writerow({
                         "filename": name,
@@ -870,7 +870,7 @@ class IBMCloud(LocalisationAnnotation):
         for filename, annotation in annotations["annotations"].items():
             names.append(filename)
             image = plt.imread(f"{image_dir}/{filename}")
-            w, h, _ = image.shape
+            h, w, _ = image.shape
             images.append(image)
 
             bboxes_per = []
@@ -907,7 +907,7 @@ class IBMCloud(LocalisationAnnotation):
         annotations_info = defaultdict(list)
         annotation_idx = 0
         for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
-            w, h, _ = image.shape
+            h, w, _ = image.shape
             for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
                 annotations_info[name].append({
                     "label": str(cls),
