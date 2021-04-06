@@ -16,8 +16,10 @@ def bbox(x: Iterable[int], y: Iterable[int], out_format: str = "2p") -> Tuple[in
     :param y: list of points in which the min and max are selected.
     :param out_format: The format that the bbox is produced.
     :return: list counting the bounding box.
-        2p: x0, y0, x1, y1
-        width_height: x0, y0, width, height
+        2p:
+            y0, x0, y1, x1
+        width_height:
+            y0, y1, height, width
     """
     assert out_format in ("2p", "width_height")
     x0, x1, y0, y1 = min(x), max(x), min(y), max(y)
