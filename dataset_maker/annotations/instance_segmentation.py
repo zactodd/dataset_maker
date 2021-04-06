@@ -329,8 +329,7 @@ class COCO(InstanceSegmentationAnnotation):
                 raise NotImplementedError()
             else:
                 segmentation = annotation["segmentation"][0]
-                x, y = segmentation[::2], segmentation[1::2]
-                poly = (x, y)
+                poly = segmentation[::2], segmentation[1::2]
             image_dict[idx]["polygons"].append(poly)
 
         names = []
