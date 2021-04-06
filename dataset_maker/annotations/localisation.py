@@ -458,7 +458,10 @@ class COCO(LocalisationAnnotation):
         }
         for annotation in annotations["annotations"]:
             idx = annotation["image_id"]
-            x0, y0, x1, y1 = annotation["bbox"]
+
+            x0, y0, bb_width, bb_height = annotation["bbox"]
+            x1, y1 = x0 + bb_width, y0 + bb_height
+
             image_dict[idx]["bboxes"].append(np.asarray([y0, x0, y1, x1], dtype="int64"))
             image_dict[idx]["classes"].append(classes_dict[annotation["category"]])
 
@@ -501,14 +504,14 @@ class COCO(LocalisationAnnotation):
         images_info = []
         annotations_info = []
         for img_idx, (name, image, bboxes_per, classes_per) in enumerate(zip(image_names, images, bboxes, classes), 1):
-            w, h, _ = image.shape
-            images_info.append({"id": img_idx, "filename": name, "width": int(w), "height": int(h)})
+            h, w, _ = image.shape
+            images_info.append({"id": img_idx, "file_name": str(name), "width": int(w), "height": int(h)})
             for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
                 bbox = [float(x0), float(y0), float(x1), float(y1)]
                 annotations_info.append({
                     "id": annotation_idx,
                     "image_id": img_idx,
-                    "category": classes_dict[cls],
+                    "category": str(classes_dict[cls]),
                     "iscrowd": 0,
                     "segmentation": [bbox],
                     "bbox": bbox,
@@ -519,7 +522,7 @@ class COCO(LocalisationAnnotation):
         data = {
             "images": images_info,
             "annotations": annotations_info,
-            "categories": [{"id": cat_idx, "name": str(cls)} for cls, cat_idx in classes_dict.items()]
+            "categories": [{"id": int(cat_idx), "name": str(cls)} for cls, cat_idx in classes_dict.items()]
         }
         with open(f"{download_dir}/coco_annotations.json", "w") as f:
             json.dump(data, f)
