@@ -344,7 +344,7 @@ class COCO(InstanceSegmentationAnnotation):
             bboxes.append(np.asarray(info["bboxes"]))
             polygons.append(info["polygons"])
             classes.append(np.asarray(info["classes"]))
-        return names, images, polygons, bboxes, classes
+        return names, images, bboxes, polygons, classes
 
     @staticmethod
     def download(download_dir, image_names, images, bboxes, polygons, classes) -> None:
