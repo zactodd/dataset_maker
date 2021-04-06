@@ -320,7 +320,7 @@ class COCO(InstanceSegmentationAnnotation):
             x0, y0, bb_width, bb_height = annotation["bbox"]
             x1, y1 = x0 + bb_width, y0 + bb_height
             image_dict[idx]["bboxes"].append(np.asarray([y0, x0, y1, x1], dtype="int64"))
-            image_dict[idx]["classes"].append(classes_dict[annotation["category"]])
+            image_dict[idx]["classes"].append(classes_dict[annotation["category_id"]])
 
             h, w, *_ = image_dict[idx]["image"].shape
 
@@ -343,7 +343,7 @@ class COCO(InstanceSegmentationAnnotation):
             names.append(name)
             images.append(info["image"])
             bboxes.append(np.asarray(info["bboxes"]))
-            polygons.append(info["polygon"])
+            polygons.append(info["polygons"])
             classes.append(np.asarray(info["classes"]))
         return names, images, polygons, bboxes, classes
 
