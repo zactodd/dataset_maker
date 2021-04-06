@@ -189,7 +189,6 @@ class VGG(InstanceSegmentationAnnotation):
             names.append(filename)
 
             image = plt.imread(f"{image_dir}/{filename}")
-            w, h, _ = image.shape
             images.append(image)
 
             bboxes_per = []
@@ -311,8 +310,8 @@ class COCO(InstanceSegmentationAnnotation):
                 "bboxes": [],
                 "classes": [],
                 "polygons": [],
-                "name": image_info["filename"],
-                "image": plt.imread(f"{image_dir}/{image_info['filename']}")
+                "name": image_info["file_name"],
+                "image": plt.imread(f"{image_dir}/{image_info['file_name']}")
             }
             for image_info in annotations["images"]
         }
