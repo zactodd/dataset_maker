@@ -2,6 +2,7 @@ import numpy as np
 import skimage
 # import pycocotools
 from typing import Iterable, Tuple
+from itertools import islice
 
 
 def spec(n):
@@ -41,6 +42,12 @@ def polygon_to_mask(x, y, width, height):
     rr, cc = skimage.draw.polygon(y, x)
     m[rr, cc] = 1
     return m
+
+
+def chunks(data, size):
+    it = iter(data)
+    for i in range(0, len(data), size):
+        yield {k: data[k] for k in islice(it, size)}
 
 
 # TODO Implement workflow to allow pycocotools to be installed
