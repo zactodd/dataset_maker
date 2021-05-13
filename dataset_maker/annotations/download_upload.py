@@ -63,7 +63,7 @@ class LoaderDownloader(Loader, Downloader, metaclass=ABCMeta):
         super().__init__()
 
 
-class ShardedConvert(Downloader):
+class ShardedConvert(LoaderDownloader):
     def __init__(self) -> None:
         pass
 
