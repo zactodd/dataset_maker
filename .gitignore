@@ -1,3 +1,7 @@
 .idea
 *.pyc
 *.json
+*.jpg
+*.png
+*.PNG
+*.JPG
