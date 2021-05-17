@@ -93,6 +93,27 @@ class ShardedConvert(LoaderDownloader):
         self._write(download_dir, self._combine_shard_output(self._download_shards(*args, **kwargs)))
 
 
+    def split_download(self, download_dir, processed_shards, ratios=(0.8, 0.1, 0.1),
+                       spilt_names=("train", "val", "test"), **kwargs):
+        # Creating directories for split files
+        paths = []
+        for n in spilt_names:
+            path = f"{download_dir}/{n}"
+            if not os.path.exists(path):
+                os.mkdir(path)
+            paths.append(path)
+
+        # Creating split indices
+        num_shards = len(processed_shards)
+        values = [int((sum(ratios[:i]) + a) * num_shards) for i, a in enumerate(ratios)]
+        idx = np.random.permutation(num_shards)
+        splits = np.split(idx, values)
+
+        # Saving split files
+        for path, s in zip(paths, splits):
+            self._write(path, self._combine_shard_output([processed_shards[i] for i in s]))
+
+
 def convert(image_dir: str, infile: str, outfile: str, in_format: ShardedConvert, out_format: ShardedConvert,
             num_shards=100, verbose=True) -> None:
     """
@@ -111,4 +132,7 @@ def convert(image_dir: str, infile: str, outfile: str, in_format: ShardedConvert
 
     simplified = [out_format._process_shard(*s) for s in shards]
     out_format._write(outfile, out_format._combine_shard_output(simplified))
+
+
+
 
