@@ -199,70 +199,6 @@ class VGG(InstanceSegmentationAnnotation):
         return (_load_shard(c) for c in utils.chunks(annotations, round(len(annotations) / num_shards)))
 
 
-    # @staticmethod
-    # def load(image_dir: str, annotations_dir: str, region_label: str = "label") -> \
-    #         Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
-    #     """
-    #     Loads a VGG file and gets the names, images bounding boxes and classes for thr image.
-    #     :param image_dir: THe directory of where the images are stored.
-    #     :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
-    #     :param region_label: The key that identifies the label being loaded.
-    #     :return: Returns names, images bounding boxes and classes
-    #         The names will be a list of strings.
-    #         The images will be a list of np.ndarray with the shapes (w, h, d).
-    #         The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
-    #         format [y0, x0, y1, x1].
-    #         The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
-    #     :raise AssertionError: If there is more than one json file in the directory of :param annotations_dir.
-    #     :raise AssertionError: If there is no json file in the directory of :param annotations_dir.
-    #     """
-    #     if annotations_dir.endswith(".json"):
-    #         annotations_file = annotations_dir
-    #     else:
-    #         potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".json")]
-    #         assert len(potential_annotations) != 0, \
-    #             f"There is no annotations .json file in {annotations_dir}."
-    #         assert len(potential_annotations) == 1, \
-    #             f"There are too many annotations .json files in {annotations_dir}."
-    #         annotations_file = potential_annotations[0]
-    #         annotations_file = f"{annotations_dir}/{annotations_file}"
-    #
-    #     with open(annotations_file, "r") as f:
-    #         annotations = json.load(f)
-    #         annotations = vgg_utils.convert_annotations_to_polygon(annotations)
-    #
-    #     names = []
-    #     images = []
-    #     bboxes = []
-    #     polygons = []
-    #     classes = []
-    #     for annotation in annotations.values():
-    #         filename = annotation["filename"]
-    #         names.append(filename)
-    #
-    #         image = plt.imread(f"{image_dir}/{filename}")
-    #         images.append(image)
-    #
-    #         bboxes_per = []
-    #         poly_per = []
-    #         classes_per = []
-    #
-    #         regions = annotation["regions"]
-    #         if isinstance(regions, dict):
-    #             regions = regions.values()
-    #
-    #         for r in regions:
-    #             xs, ys = r["shape_attributes"]["all_points_x"], r["shape_attributes"]["all_points_y"]
-    #             bbox = utils.bbox(xs, ys)
-    #             bboxes_per.append(np.asarray(bbox))
-    #             poly_per.append((xs, ys))
-    #             classes_per.append(r["region_attributes"][region_label])
-    #         bboxes.append(np.asarray(bboxes_per))
-    #         polygons.append(np.asarray(poly_per))
-    #         classes.append(np.asarray(classes_per))
-    #     return names, images, bboxes, polygons, classes
-
-
     @staticmethod
     def _process_shard(image_names, images, bboxes, polygons, classes) -> Sized:
         assert len(image_names) == len(images) == len(bboxes) == len(polygons) == len(classes), \
@@ -272,7 +208,7 @@ class VGG(InstanceSegmentationAnnotation):
             f"len(bboxes): {len(bboxes)}\n" \
             f"len(polygons): {len(polygons)}" \
             f"len(classes): {len(classes)}"
-        annotations = {
+        return {
             name: {
                 "regions": [
                     {
@@ -287,7 +223,7 @@ class VGG(InstanceSegmentationAnnotation):
             }
             for name, image, poly_per, classes_per in zip(image_names, images, polygons, classes)
         }
-        return annotations
+
 
 
     @staticmethod
@@ -301,33 +237,6 @@ class VGG(InstanceSegmentationAnnotation):
     def _write(download_dir: str, data: dict) -> None:
         with open(f"{download_dir}/vgg_annotations.json", "w") as f:
             json.dump(data, f)
-
-    # @staticmethod
-    # def download(download_dir, image_names, images, bboxes, polygon, classes) -> None:
-    #     assert len(image_names) == len(images) == len(bboxes) == len(polygon) == len(classes), \
-    #         "The params image_names, images, bboxes, polygons and classes must have the same length." \
-    #         f"len(image_names): {len(image_names)}\n" \
-    #         f"len(images): {len(images)}\n" \
-    #         f"len(bboxes): {len(bboxes)}\n" \
-    #         f"len(polygons): {len(polygon)}" \
-    #         f"len(classes): {len(classes)}"
-    #     annotations = {
-    #         name: {
-    #             "regions": [
-    #                 {
-    #                     "shape_attributes": {
-    #                         "name": "polygon",
-    #                         "all_points_x": [int(x) for x in xs],
-    #                         "all_points_y": [int(y) for y in ys]},
-    #                     "region_attributes": {"label": str(cls)}
-    #                 }
-    #                 for cls, (xs, ys) in zip(classes_per, poly_per)
-    #             ]
-    #         }
-    #         for name, image, poly_per, classes_per in tqdm(zip(image_names, images, polygon, classes))
-    #     }
-    #     with open(f"{download_dir}/vgg_annotations.json", "w") as f:
-    #         json.dump(annotations, f)
 
 
 @strategy_method(InstanceSegmentationAnnotationFormats)
