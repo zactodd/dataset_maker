@@ -347,19 +347,23 @@ class COCO(InstanceSegmentationAnnotation):
             f"len(bboxes): {len(bboxes)}\n" \
             f"len(polygons): {len(polygons)}" \
             f"len(classes): {len(classes)}"
+        classes_dict = {n: i for i, n in enumerate({cls for classes_per in classes for cls in classes_per}, 1)}
+
         images_info = {}
         annotations_info = []
         classes_info = set()
+        anno_idx = count()
         for img_idx, (name, image, bboxes_per, poly_per, classes_per) in \
                 enumerate(zip(image_names, images, bboxes, polygons, classes), 1):
             h, w, _ = image.shape
 
-            images_info[str(name)] = {"file_name": str(name), "width": int(w), "height": int(h)}
+            images_info[str(name)] = {"id": img_idx, "file_name": str(name), "width": int(w), "height": int(h)}
 
             for (y0, x0, y1, x1), (xs, ys), cls in zip(bboxes_per, poly_per, classes_per):
                 annotations_info.append({
+                    "id": next(anno_idx),
                     "image_id": str(name),
-                    "category_id": cls,
+                    "category_id": str(classes_dict[cls]),
                     "iscrowd": 0,
                     "segmentation": [[int(p) for ps in zip(xs, ys) for p in ps]],
                     "bbox": [int(x0), int(y0), int(x1 - x0), int(y1 - y0)],
@@ -369,22 +373,27 @@ class COCO(InstanceSegmentationAnnotation):
         return {
             "images": images_info,
             "annotations": annotations_info,
-            "categories": classes_info
+            "categories": [{"id": int(cat_idx), "name": str(cls), "supercategory": "type"}
+                           for cls, cat_idx in classes_dict.items()]
         }
 
     @staticmethod
     def _combine_shard_output(shards):
         cls_idx, img_idx, anno_idx = count(), count(), count()
-        categories = {cls: {"id": next(cls_idx), "name": str(cls), "supercategory": "type"}
+
+        # TODO work out if slow
+        categories = {cls["name"]: {"id": next(cls_idx), "name": str(cls), "supercategory": "type"}
                       for s in shards for cls in s["categories"]}
         image_info = {info["file_name"]: {"id": next(img_idx), **info}
                       for s in shards for info in s["images"].values()}
 
         annotations_info = []
         for s in shards:
+            local_cls_idx = {cls["id"]: categories[cls["name"]]["id"] for cls in s["categories"]}
+            local_img_idx = {info["id"]: image_info[info["file_name"]]["id"] for info in s["images"]}
             for a in s["annotations"]:
-                a["category_id"] = categories[a["category_id"]]["id"]
-                a["image_id"] = image_info[a["image_id"]]["id"]
+                a["category_id"] = local_cls_idx[a["category_id"]]
+                a["image_id"] = local_img_idx[a["image_id"]]
                 a["id"] = next(anno_idx)
                 annotations_info.append(a)
 
