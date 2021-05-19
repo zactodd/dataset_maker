@@ -6,7 +6,6 @@ from abc import ABCMeta, abstractmethod
 from typing import Tuple, List, Union, Dict, Optional
 import numpy as np
 from xml.etree import ElementTree
-import matplotlib.pyplot as plt
 from functools import reduce
 from dataset_maker import utils
 import json
@@ -18,7 +17,6 @@ from dataset_maker.annotations import dataset_utils, vgg_utils
 import contextlib2
 from PIL import Image
 
-
 IMAGE_FORMATS = (".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG")
 
 
@@ -26,13 +24,14 @@ class LocalisationAnnotationFormats(SingletonStrategies):
     """
     Singleton for holding localisation annotation formats.
     """
+
     def __init__(self):
         super().__init__()
 
     @staticmethod
     @abstractmethod
     def load(image_dir: str, annotations_file: str) -> \
-            Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+            Tuple[List[str], List, List[np.ndarray], List[np.ndarray]]:
         pass
 
     @staticmethod
@@ -52,10 +51,11 @@ class LocalisationAnnotation(LoaderDownloader, metaclass=ABCMeta):
     """
     Abstract base class for LocalisationAnnotation as a LoaderDownloader.
     """
+
     def __init__(self) -> None:
         super().__init__()
 
-    def create_tfrecord(self, image_dir: str, annotations_file: str, output_dir:str, num_shards:int = 1,
+    def create_tfrecord(self, image_dir: str, annotations_file: str, output_dir: str, num_shards: int = 1,
                         shard_splits: Optional[Tuple[float]] = None, split_names=Optional[Tuple[str]],
                         class_map: Optional[Dict[str, int]] = None) -> None:
         """
@@ -85,7 +85,8 @@ class LocalisationAnnotation(LoaderDownloader, metaclass=ABCMeta):
                 if split_names is None:
                     split_names = [f"split_{i}" for i in range(len(shard_splits))]
 
-                output_tfrecords = dataset_utils.open_sharded_tfrecords_with_splits(close_stack, output_dir, num_shards, shard_splits, split_names)
+                output_tfrecords = dataset_utils.open_sharded_tfrecords_with_splits(close_stack, output_dir, num_shards,
+                                                                                    shard_splits, split_names)
             else:
                 output_tfrecords = dataset_utils.open_sharded_tfrecords(close_stack, output_dir, num_shards)
 
@@ -95,7 +96,6 @@ class LocalisationAnnotation(LoaderDownloader, metaclass=ABCMeta):
                 with tf.io.gfile.GFile(f"{image_dir}/{filename}", "rb") as fid:
                     encoded_image = fid.read()
 
-                image = Image.fromarray(np.uint8(image * 255))
                 width, height = image.size
 
                 xmins = []
@@ -169,9 +169,10 @@ class VGG(LocalisationAnnotation):
         }
     }
     """
+
     @staticmethod
     def load(image_dir: str, annotations_dir: str, region_label: str = "label") -> \
-            Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+            Tuple[List[str], List, List[np.ndarray], List[np.ndarray]]:
         """
         Loads a VGG file and gets the names, images bounding boxes and classes for thr image.
         :param image_dir: THe directory of where the images are stored.
@@ -207,15 +208,15 @@ class VGG(LocalisationAnnotation):
         classes = []
         for filename, annotation in annotations.items():
             names.append(filename)
-            images.append(plt.imread(f"{image_dir}/{filename}"))
+            images.append(Image.open(f"{image_dir}/{filename}"))
 
             bboxes_per = []
             classes_per = []
-            
+
             regions = annotation["regions"]
             if isinstance(regions, dict):
                 regions = regions.values()
-                
+
             for r in regions:
                 bbox = utils.bbox(r["shape_attributes"]["all_points_x"], r["shape_attributes"]["all_points_y"])
                 bboxes_per.append(np.asarray(bbox))
@@ -225,13 +226,13 @@ class VGG(LocalisationAnnotation):
         return names, images, bboxes, classes
 
     @staticmethod
-    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
-                 classes:  List[np.ndarray]) -> None:
+    def download(download_dir: str, image_names: List[str], images: List, bboxes: List[np.ndarray],
+                 classes: List[np.ndarray]) -> None:
         """
         Downloads a VGG json file to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param images: The images being annotated. 
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -293,7 +294,7 @@ class PascalVOC(LocalisationAnnotation):
         </object>
     </annotation>
     """
-    
+
     @staticmethod
     def load(image_dir: str, annotations_dir: str) -> Tuple[list, list, list, list]:
         """
@@ -316,7 +317,7 @@ class PascalVOC(LocalisationAnnotation):
             root = ElementTree.parse(f"{annotations_dir}/{f}")
             name = root.find("filename").text
             names.append(name)
-            images.append(plt.imread(f"{image_dir}/{name}"))
+            images.append(Image.open(f"{image_dir}/{name}"))
             bboxes_per = []
             classes_per = []
             for obj in root.findall("object"):
@@ -332,13 +333,13 @@ class PascalVOC(LocalisationAnnotation):
         return names, images, bboxes, classes
 
     @staticmethod
-    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
-                 classes:  List[np.ndarray]) -> None:
+    def download(download_dir: str, image_names: List[str], images: List, bboxes: List[np.ndarray],
+                 classes: List[np.ndarray]) -> None:
         """
         Downloads a Pascal VOC xml files to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param images: The images being annotated. 
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -422,7 +423,7 @@ class COCO(LocalisationAnnotation):
 
     @staticmethod
     def load(image_dir: str, annotations_dir: str) -> \
-            Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+            Tuple[List[str], List, List[np.ndarray], List[np.ndarray]]:
         """
         Loads a COCO file and gets the names, images bounding boxes and classes for thr image.
         :param image_dir: THe directory of where the images are stored.
@@ -472,19 +473,19 @@ class COCO(LocalisationAnnotation):
         for info in image_dict.values():
             name = info["name"]
             names.append(name)
-            images.append(plt.imread(f"{image_dir}/{name}"))
+            images.append(Image.open(f"{image_dir}/{name}"))
             bboxes.append(np.asarray(info["bboxes"]))
             classes.append(np.asarray(info["classes"]))
         return names, images, bboxes, classes
 
     @staticmethod
-    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+    def download(download_dir: str, image_names: List[str], images: List, bboxes: List[np.ndarray],
                  classes: List[np.ndarray]) -> None:
         """
         Downloads a COCO json file to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param images: The images being annotated. 
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -504,7 +505,7 @@ class COCO(LocalisationAnnotation):
         images_info = []
         annotations_info = []
         for img_idx, (name, image, bboxes_per, classes_per) in enumerate(zip(image_names, images, bboxes, classes), 1):
-            h, w, _ = image.shape
+            w, h = image.size
             images_info.append({"id": img_idx, "file_name": str(name), "width": int(w), "height": int(h)})
             for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
                 bbox = [float(x0), float(y0), float(x1), float(y1)]
@@ -531,12 +532,12 @@ class COCO(LocalisationAnnotation):
 @strategy_method(LocalisationAnnotationFormats)
 class YOLO(LocalisationAnnotation):
     """
-
     Localisation Annotation Class for the loading and downloading YOLO annotations.
     YOLO annotations are txt file per image being annotated. For example:
     0 0.573204 0.619149 0.860499 0.738120
     1 0.758543 0.532122 0.241968 0.665306
     """
+
     @staticmethod
     def load(image_dir, annotations_dir) -> Tuple[list, list, list, list]:
         """
@@ -574,10 +575,10 @@ class YOLO(LocalisationAnnotation):
                 image_path = potential_images[0]
                 name = re.split("/|\\\\", image_path)[-1]
                 names.append(name)
-
-                image = plt.imread(image_path)
+                
+                image = Image.open(image_path)
+                w, h = image.size
                 images.append(image)
-                h, w, _ = image.shape
 
                 bboxes_per = []
                 classes_per = []
@@ -591,13 +592,13 @@ class YOLO(LocalisationAnnotation):
         return names, images, bboxes, classes
 
     @staticmethod
-    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+    def download(download_dir: str, image_names: List[str], images: List, bboxes: List[np.ndarray],
                  classes: List[np.ndarray]) -> None:
         """
         Downloads a YOLO txt files to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param images: The images being annotated. 
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -626,10 +627,10 @@ class OIDv4(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading OIDv4 annotations.
     OIDv4 annotations are txt file per image being annotated. For example:
-
     camera 0.573204 0.619149 0.860499 0.738120
     popcorn 0.758543 0.532122 0.241968 0.665306
     """
+
     @staticmethod
     def load(image_dir, annotations_dir) -> Tuple[list, list, list, list]:
         """
@@ -667,11 +668,9 @@ class OIDv4(LocalisationAnnotation):
                 image_path = potential_images[0]
                 name = re.split("/|\\\\", image_path)[-1]
                 names.append(name)
-
-                image = plt.imread(image_path)
-                images.append(image)
-                h, w, _ = image.shape
-
+                
+                images.append(Image.open(image_path))
+                
                 bboxes_per = []
                 classes_per = []
                 for line in f.readlines():
@@ -683,13 +682,13 @@ class OIDv4(LocalisationAnnotation):
         return names, images, bboxes, classes
 
     @staticmethod
-    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+    def download(download_dir: str, image_names: List[str], images: List, bboxes: List[np.ndarray],
                  classes: List[np.ndarray]) -> None:
         """
         Downloads a OIDv4 txt files to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param images: The images being annotated. 
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -715,7 +714,6 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading Tensorflow Object Detection CSV annotations.
     Tensorflow Object Detection CSV annotations is a csv file. For example:
-
     filename,width,height,class,xmin,ymin,xmax,ymax
     000001.jpg,500,375,helmet,111,144,134,174
     000001.jpg,500,375,helmet,178,84,230,143
@@ -723,9 +721,10 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
     000007.jpg,500,466,helmet,174,156,201,219
     000007.jpg,500,466,helmet,197,177,231,227
     """
+
     @staticmethod
     def load(image_dir: str, annotations_dir: str) -> \
-            Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+            Tuple[List[str], List, List[np.ndarray], List[np.ndarray]]:
         """
         Loads a Tensorflow Object Detection CSV file and gets the names, images bounding boxes and classes for thr image.
         :param image_dir: THe directory of where the images are stored.
@@ -750,7 +749,6 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
             annotations_file = potential_annotations[0]
             annotations_file = f"{annotations_dir}/{annotations_file}"
 
-
         image_dict = defaultdict(lambda: {"bboxes": [], "classes": []})
         with open(f"{annotations_dir}/{annotations_file}", "r") as f:
             for row in csv.DictReader(f, delimiter=','):
@@ -765,19 +763,19 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
         classes = []
         for name, info in image_dict.items():
             names.append(name)
-            images.append(plt.imread(f"{image_dir}/{name}"))
+            images.append(Image.open(f"{image_dir}/{name}"))
             bboxes.append(np.asarray(info["bboxes"]))
             classes.append(np.asarray(info["classes"]))
         return names, images, bboxes, classes
 
     @staticmethod
-    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+    def download(download_dir: str, image_names: List[str], images: List, bboxes: List[np.ndarray],
                  classes: List[np.ndarray]) -> None:
         """
         Downloads a Tensorflow Object Detection CSV file to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param images: The images being annotated. 
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -797,7 +795,7 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
-                h, w, _ = image.shape
+                w, h = image.size
                 for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
                     writer.writerow({
                         "filename": name,
@@ -816,7 +814,6 @@ class IBMCloud(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading VGG annotations. IBM Cloud uses a .json format.
     For example:
-
     {
     "version": "1.0",
     "type": "localization",
@@ -835,7 +832,7 @@ class IBMCloud(LocalisationAnnotation):
 
     @staticmethod
     def load(image_dir: str, annotations_dir: str) -> \
-            Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+            Tuple[List[str], List, List[np.ndarray], List[np.ndarray]]:
         """
         Loads a IBM CLoud json file and gets the names, images bounding boxes and classes for thr image.
         :param image_dir: THe directory of where the images are stored.
@@ -869,8 +866,8 @@ class IBMCloud(LocalisationAnnotation):
         classes = []
         for filename, annotation in annotations["annotations"].items():
             names.append(filename)
-            image = plt.imread(f"{image_dir}/{filename}")
-            h, w, _ = image.shape
+            image = Image.open(f"{image_dir}/{filename}")
+            w, h = image.size
             images.append(image)
 
             bboxes_per = []
@@ -883,13 +880,13 @@ class IBMCloud(LocalisationAnnotation):
         return names, images, bboxes, classes
 
     @staticmethod
-    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+    def download(download_dir: str, image_names: List[str], images: List, bboxes: List[np.ndarray],
                  classes: List[np.ndarray]) -> None:
         """
         Downloads a IBM CLoud json file to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param images: The images being annotated. 
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -907,7 +904,7 @@ class IBMCloud(LocalisationAnnotation):
         annotations_info = defaultdict(list)
         annotation_idx = 0
         for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
-            h, w, _ = image.shape
+            w, h = image.size
             for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
                 annotations_info[name].append({
                     "label": str(cls),
@@ -934,15 +931,15 @@ class VoTTCSV(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading VoTT CSV annotations.
     VoTT CSV annotations is a csv file. For example:
-
     "image","xmin","ymin","xmax","ymax","label"
     "img0001.jpg",109.02857142857141,86.14285714285714,153.77142857142854,123.94285714285714,"helmet"
     "img0001.jpg",122.69760696156635,18.85103626943005,193.18346627991298,88.48834196891191,"person"
     "img0002.jpg",6.816997518610422,22.483428571428572,195.0452853598015,182.48685714285713,"helmet"
     """
+
     @staticmethod
     def load(image_dir: str, annotations_dir: str) -> \
-            Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+            Tuple[List[str], List, List[np.ndarray], List[np.ndarray]]:
         """
         Loads a VoTT CSV file and gets the names, images bounding boxes and classes for thr image.
         :param image_dir: THe directory of where the images are stored.
@@ -982,19 +979,19 @@ class VoTTCSV(LocalisationAnnotation):
         for name, info in image_dict.items():
             name = name.strip("\"")
             names.append(name)
-            images.append(plt.imread(f"{image_dir}/{name}"))
+            images.append(Image.open(f"{image_dir}/{name}"))
             bboxes.append(np.asarray(info["bboxes"]))
             classes.append(np.asarray(info["classes"]))
         return names, images, bboxes, classes
 
     @staticmethod
-    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+    def download(download_dir: str, image_names: List[str], images: List, bboxes: List[np.ndarray],
                  classes: List[np.ndarray]) -> None:
         """
         Downloads a VoTT CSV file to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param images: The images being annotated. 
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -1010,7 +1007,7 @@ class VoTTCSV(LocalisationAnnotation):
             f"len(classes): {len(classes)}"
 
         with open(f"{download_dir}/vott_annotations.csv", mode='w') as f:
-            fieldnames = ["\"image\"", "\"xmin\"", "\"ymin\"", "\"xmax\"","\"ymax\"", "\"label\""]
+            fieldnames = ["\"image\"", "\"xmin\"", "\"ymin\"", "\"xmax\"", "\"ymax\"", "\"label\""]
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
@@ -1050,7 +1047,7 @@ class CreateML(LocalisationAnnotation):
 
     @staticmethod
     def load(image_dir: str, annotations_dir: str) -> \
-            Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+            Tuple[List[str], List, List[np.ndarray], List[np.ndarray]]:
         """
         Loads a CreateML json file and gets the names, images bounding boxes and classes for thr image.
         :param image_dir: THe directory of where the images are stored.
@@ -1085,7 +1082,7 @@ class CreateML(LocalisationAnnotation):
         for info in annotations:
             name = info["image"]
             names.append(name)
-            images.append(images.append(plt.imread(f"{image_dir}/{name}")))
+            images.append(images.append(Image.open(f"{image_dir}/{name}")))
             bboxes_per = []
             classes_per = []
             for a in info["annotations"]:
@@ -1098,13 +1095,13 @@ class CreateML(LocalisationAnnotation):
         return names, images, bboxes, classes
 
     @staticmethod
-    def download(download_dir: str, image_names: List[str], images: List[np.ndarray], bboxes: List[np.ndarray],
+    def download(download_dir: str, image_names: List[str], images: List, bboxes: List[np.ndarray],
                  classes: List[np.ndarray]) -> None:
         """
         Downloads a CreateML json file to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. A list of np.ndarray with the shape (width, height, depth).
+        :param images: The images being annotated. 
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -1169,7 +1166,7 @@ convert_annotation_format = dataset_utils.annotation_format_converter(Localisati
                                                                       FORMATS)
 
 
-def convert_annotation_tf_record(image_dir: str, annotations_dir: str,  download_dir: str,
+def convert_annotation_tf_record(image_dir: str, annotations_dir: str, download_dir: str,
                                  annotation_format: Union[LocalisationAnnotation, str], num_shard=1,
                                  shard_splits: Optional[Tuple[float]] = None, split_names: Optional[Tuple[str]] = None,
                                  class_map: Optional[Dict[str, int]] = None) -> None:
