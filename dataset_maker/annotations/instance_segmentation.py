@@ -185,7 +185,7 @@ class VGG(InstanceSegmentationAnnotation):
             filename = annotation["filename"]
             names.append(filename)
 
-            images.append(Image.open(filename))
+            images.append(Image.open(f"{image_dir}/{filename}"))
 
             bboxes_per = []
             poly_per = []
@@ -274,11 +274,11 @@ class COCO(InstanceSegmentationAnnotation):
             Tuple[List[str], List[np.ndarray], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
         """
         Loads a COCO file and gets the names, images bounding boxes and classes for thr image.
-        :param image_dir: THe directory of where the images are stored.
+        :param image_dir: The directory of where the images are stored.
         :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
         :return: Returns names, images bounding boxes and classes
             The names will be a list of strings.
-            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The images will be a list of PIL images..
             The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
             format [y0, x0, y1, x1].
             The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
