@@ -80,7 +80,7 @@ class TestAnnotation:
         for example in self.tf_examples:
             result = tf.train.SequenceExample.FromString(example)
             try:
-                self.assertNotEqual("", str(result.context.feature["image/sources_id"]))
+                self.assertNotEqual("", str(result.context.feature["image/source_id"]))
             except AssertionError as e:
                 self.verification_errors.append(str(e))
 
