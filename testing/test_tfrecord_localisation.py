@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from dataset_maker.patterns import Singleton
 import os
 import tensorflow as tf
+from PIL import Image
+import numpy as np
 
 
 class TestHelper(metaclass=Singleton):
@@ -27,6 +29,8 @@ class TestHelper(metaclass=Singleton):
 
             dm = maker.MulticlassMultipleSquares(min_width=50, max_width=100)
             self.images, self.bboxes, self.classes = dm.make(10)
+            self.images = [Image.fromarray(np.uint8(i) * 255) for i in self.images]
+
             self.names = [f"img_{i}.png" for i in range(len(self.images))]
             self.names_dict = {n: d for n, *d in zip(self.names, self.images, self.bboxes, self.classes)}
 
@@ -38,7 +42,7 @@ class TestHelper(metaclass=Singleton):
 
                 self.annotation.create_tfrecord(td, td, f"{td}/tfrecord", 1)
                 tfrecord_files = [f"{td}/{f}" for f in os.listdir(td) if "tfrecord" in f]
-                self.tf_examples = list(tf.io.tf_record_iterator(tfrecord_files[0]))
+                self.tf_examples = list(tf.compat.v1.io.tf_record_iterator(tfrecord_files[0]))
 
 
 class TestAnnotation:

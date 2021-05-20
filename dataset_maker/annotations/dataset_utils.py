@@ -34,7 +34,7 @@ def open_sharded_tfrecords(exit_stack: contextlib2.ExitStack, base_path: str, nu
     :return: List of exit stacks to store where each the shards are being written.
     """
     return [
-        exit_stack.enter_context(tf.python_io.TFRecordWriter(f"{base_path}-{idx:05d}-of-{num_shards:05d}"))
+        exit_stack.enter_context(tf.io.TFRecordWriter(f"{base_path}-{idx:05d}-of-{num_shards:05d}"))
         for idx in range(1, num_shards + 1)
     ]
 
