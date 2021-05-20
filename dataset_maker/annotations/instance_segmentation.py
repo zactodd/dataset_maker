@@ -185,7 +185,8 @@ class VGG(InstanceSegmentationAnnotation):
             filename = annotation["filename"]
             names.append(filename)
 
-            images.append(Image.open(f"{image_dir}/{filename}"))
+            with Image.open(f"{image_dir}/{filename}") as image:
+                images.append(image)
 
             bboxes_per = []
             poly_per = []
@@ -301,16 +302,16 @@ class COCO(InstanceSegmentationAnnotation):
 
         classes_dict = {cls_info["id"]: cls_info["name"] for cls_info in annotations["categories"]}
 
-        image_dict = {
-            image_info["id"]: {
-                "bboxes": [],
-                "classes": [],
-                "polygons": [],
-                "name": image_info["file_name"],
-                "image": Image.OPEN(f"{image_dir}/{image_info['file_name']}")
-            }
-            for image_info in annotations["images"]
-        }
+        image_dict = {}
+        for image_info in annotations["images"]:
+            with Image.OPEN(f"{image_dir}/{image_info['file_name']}") as image:
+                image_dict[image_info["id"]] = {
+                    "bboxes": [],
+                    "classes": [],
+                    "polygons": [],
+                    "name": image_info["file_name"],
+                    "image": image
+                }
         for annotation in annotations["annotations"]:
             idx = annotation["image_id"]
             x0, y0, bb_width, bb_height = annotation["bbox"]
