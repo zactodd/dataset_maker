@@ -31,8 +31,6 @@ class TestHelper(metaclass=Singleton):
 
             dm = maker.MulticlassMultipleSquares(min_width=50, max_width=100)
             self.images, self.bboxes, self.classes = dm.make(10)
-
-            self.images = [Image.fromarray(np.uint8(i) * 255) for i in self.images]
             self.names = [f"img_{i}.png" for i in range(len(self.images))]
             self.names_dict = {n: d for n, *d in zip(self.names, self.images, self.bboxes, self.classes)}
 
@@ -40,6 +38,7 @@ class TestHelper(metaclass=Singleton):
                 for name, image in zip(self.names, self.images):
                     plt.imsave(f"{td}/{name}", image)
 
+                self.images = [Image.fromarray(np.uint8(i) * 255) for i in self.images]
                 annotation.download(td, self.names, self.images, self.bboxes, self.classes)
 
                 self.dl_names, self.dl_images, self.dl_bboxes, self.dl_classes = self.annotation.load(td, td)
