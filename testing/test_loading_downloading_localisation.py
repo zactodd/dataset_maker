@@ -5,6 +5,7 @@ from dataset_maker.annotations import localisation as anno
 from dataset_maker import maker
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image
 from dataset_maker.patterns import Singleton
 
 
@@ -30,6 +31,8 @@ class TestHelper(metaclass=Singleton):
 
             dm = maker.MulticlassMultipleSquares(min_width=50, max_width=100)
             self.images, self.bboxes, self.classes = dm.make(10)
+
+            self.images = [Image.fromarray(np.uint8(i) * 255) for i in self.images]
             self.names = [f"img_{i}.png" for i in range(len(self.images))]
             self.names_dict = {n: d for n, *d in zip(self.names, self.images, self.bboxes, self.classes)}
 
