@@ -95,7 +95,6 @@ class LocalisationAnnotation(LoaderDownloader, metaclass=ABCMeta):
 
                 with tf.io.gfile.GFile(f"{image_dir}/{filename}", "rb") as fid:
                     encoded_image = fid.read()
-
                 width, height = image.size
 
                 xmins = []
@@ -208,7 +207,8 @@ class VGG(LocalisationAnnotation):
         classes = []
         for filename, annotation in annotations.items():
             names.append(filename)
-            images.append(Image.open(f"{image_dir}/{filename}"))
+            with Image.open(f"{image_dir}/{filename}") as image:
+                images.append(image)
 
             bboxes_per = []
             classes_per = []
@@ -317,7 +317,8 @@ class PascalVOC(LocalisationAnnotation):
             root = ElementTree.parse(f"{annotations_dir}/{f}")
             name = root.find("filename").text
             names.append(name)
-            images.append(Image.open(f"{image_dir}/{name}"))
+            with Image.open(f"{image_dir}/{name}") as image:
+                images.append(image)
             bboxes_per = []
             classes_per = []
             for obj in root.findall("object"):
@@ -454,7 +455,7 @@ class COCO(LocalisationAnnotation):
         classes_dict = {cls_info["id"]: cls_info["name"] for cls_info in annotations["categories"]}
 
         image_dict = {
-            image_info["id"]: {"bboxes": [], "classes": [], "name": image_info["filename"]}
+            image_info["id"]: {"bboxes": [], "classes": [], "name": image_info["file_name"]}
             for image_info in annotations["images"]
         }
         for annotation in annotations["annotations"]:
@@ -473,7 +474,8 @@ class COCO(LocalisationAnnotation):
         for info in image_dict.values():
             name = info["name"]
             names.append(name)
-            images.append(Image.open(f"{image_dir}/{name}"))
+            with Image.open(f"{image_dir}/{name}") as image:
+                images.append(image)
             bboxes.append(np.asarray(info["bboxes"]))
             classes.append(np.asarray(info["classes"]))
         return names, images, bboxes, classes
@@ -512,7 +514,7 @@ class COCO(LocalisationAnnotation):
                 annotations_info.append({
                     "id": annotation_idx,
                     "image_id": img_idx,
-                    "category_id": str(classes_dict[cls]),
+                    "category_id": classes_dict[cls],
                     "iscrowd": 0,
                     "segmentation": [bbox],
                     "bbox": bbox,
@@ -575,10 +577,10 @@ class YOLO(LocalisationAnnotation):
                 image_path = potential_images[0]
                 name = re.split("/|\\\\", image_path)[-1]
                 names.append(name)
-                
-                image = Image.open(image_path)
-                w, h = image.size
-                images.append(image)
+
+                with Image.open(image_path) as image:
+                    w, h = image.size
+                    images.append(image)
 
                 bboxes_per = []
                 classes_per = []
@@ -668,8 +670,9 @@ class OIDv4(LocalisationAnnotation):
                 image_path = potential_images[0]
                 name = re.split("/|\\\\", image_path)[-1]
                 names.append(name)
-                
-                images.append(Image.open(image_path))
+
+                with Image.open(image_path) as image:
+                    images.append(image)
                 
                 bboxes_per = []
                 classes_per = []
@@ -763,7 +766,8 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
         classes = []
         for name, info in image_dict.items():
             names.append(name)
-            images.append(Image.open(f"{image_dir}/{name}"))
+            with Image.open(f"{image_dir}/{name}") as image:
+                images.append(image)
             bboxes.append(np.asarray(info["bboxes"]))
             classes.append(np.asarray(info["classes"]))
         return names, images, bboxes, classes
@@ -866,9 +870,10 @@ class IBMCloud(LocalisationAnnotation):
         classes = []
         for filename, annotation in annotations["annotations"].items():
             names.append(filename)
-            image = Image.open(f"{image_dir}/{filename}")
-            w, h = image.size
-            images.append(image)
+
+            with Image.open(f"{image_dir}/{filename}") as image:
+                w, h = image.size
+                images.append(image)
 
             bboxes_per = []
             classes_per = []
@@ -979,7 +984,8 @@ class VoTTCSV(LocalisationAnnotation):
         for name, info in image_dict.items():
             name = name.strip("\"")
             names.append(name)
-            images.append(Image.open(f"{image_dir}/{name}"))
+            with Image.open(f"{image_dir}/{name}") as image:
+                images.append(image)
             bboxes.append(np.asarray(info["bboxes"]))
             classes.append(np.asarray(info["classes"]))
         return names, images, bboxes, classes
@@ -1082,7 +1088,8 @@ class CreateML(LocalisationAnnotation):
         for info in annotations:
             name = info["image"]
             names.append(name)
-            images.append(images.append(Image.open(f"{image_dir}/{name}")))
+            with Image.open(f"{image_dir}/{name}") as image:
+                images.append(image)
             bboxes_per = []
             classes_per = []
             for a in info["annotations"]:
