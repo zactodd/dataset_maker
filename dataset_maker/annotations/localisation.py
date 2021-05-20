@@ -357,7 +357,8 @@ class PascalVOC(LocalisationAnnotation):
 
         folder = re.split("/|\\\\", download_dir)[-1]
         for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
-            w, h, d = image.shape
+            w, h = image.size
+            d = len(image.getbands())
 
             root = ElementTree.Element("annotation")
             ElementTree.SubElement(root, "folder").text = folder
@@ -619,7 +620,7 @@ class YOLO(LocalisationAnnotation):
         for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
             save_name = reduce(lambda n, fmt: n.strip(fmt), IMAGE_FORMATS, name)
             with open(f"{download_dir}/{save_name}.txt", "w") as f:
-                w, h, d = image.shape
+                w, h = image.size
                 for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
                     f.write(f"{classes_dict[cls]} {x0 / w} {y0 / h} {(x1 - x0) / w} {(y1 - y0) / h}\n")
 
@@ -663,9 +664,9 @@ class OIDv4(LocalisationAnnotation):
                         potential_images.append(image_path)
 
                 assert len(potential_images) != 0, \
-                    f"There is no image file in {image_dir} corresponding to the YOLO file {file_path}."
+                    f"There is no image file in {image_dir} corresponding to the OIDv4 file {file_path}."
                 assert len(potential_images) == 1, \
-                    f"There are too many image file in {image_dir} corresponding to the YOLO file {file_path}."
+                    f"There are too many image file in {image_dir} corresponding to the OIDv4 file {file_path}."
 
                 image_path = potential_images[0]
                 name = re.split("/|\\\\", image_path)[-1]
@@ -750,9 +751,9 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
             assert len(potential_annotations) == 1, \
                 f"There are too many annotations .csv files in {annotations_dir}."
             annotations_file = potential_annotations[0]
-            annotations_file = f"{annotations_dir}/{annotations_file}"
 
         image_dict = defaultdict(lambda: {"bboxes": [], "classes": []})
+        print(os.path.exists(f"{annotations_dir}/{annotations_file}"))
         with open(f"{annotations_dir}/{annotations_file}", "r") as f:
             for row in csv.DictReader(f, delimiter=','):
                 name = row["filename"]
@@ -967,7 +968,6 @@ class VoTTCSV(LocalisationAnnotation):
             assert len(potential_annotations) == 1, \
                 f"There are too many annotations .csv files in {annotations_dir}."
             annotations_file = potential_annotations[0]
-            annotations_file = f"{annotations_dir}/{annotations_file}"
 
         image_dict = defaultdict(lambda: {"bboxes": [], "classes": []})
         with open(f"{annotations_dir}/{annotations_file}", "r") as f:
