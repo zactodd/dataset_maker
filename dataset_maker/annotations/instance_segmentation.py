@@ -319,8 +319,6 @@ class COCO(InstanceSegmentationAnnotation):
             image_dict[idx]["bboxes"].append(np.asarray([y0, x0, y1, x1], dtype="int64"))
             image_dict[idx]["classes"].append(classes_dict[annotation["category_id"]])
 
-            w, h = image_dict[idx]["image"].size
-
             # TODO Implement workflow to allow pycocotools to be installed
             if annotation["iscrowd"]:
                 raise NotImplementedError()
@@ -385,5 +383,43 @@ class COCO(InstanceSegmentationAnnotation):
         with open(f"{download_dir}/coco_annotations.json", "w") as f:
             json.dump(data, f)
 
+
+@strategy_method(InstanceSegmentationAnnotationFormats)
+class Remo(InstanceSegmentationAnnotation):
+    @staticmethod
+    def load(image_dir: str, annotations_dir: str) -> \
+            Tuple[List[str], List, List[np.ndarray], List[np.ndarray]]:
+        return
+
+    @staticmethod
+    def download(download_dir, image_names, images, bboxes, polygons, classes) -> None:
+        assert len(image_names) == len(images) == len(bboxes) == len(polygons) == len(classes), \
+            "The params image_names, images, bboxes, polygons and classes must have the same length." \
+            f"len(image_names): {len(image_names)}\n" \
+            f"len(images): {len(images)}\n" \
+            f"len(bboxes): {len(bboxes)}\n" \
+            f"len(polygons): {len(polygons)}" \
+            f"len(classes): {len(classes)}"
+
+        annotations = []
+        for name, image, poly_per, classes_per in zip(image_names, images, polygons, classes):
+            w, h = image.size
+            annotations.append(
+                {
+                    "file_name": name,
+                    "width": w,
+                    "height": h,
+                    "tags": [],
+                    "task": "Instance segmentation",
+                    "annotations": [
+                        {
+                            "classes": [cls],
+                            "segments": [{"x": x, "y": y} for x, y in zip(*p)]
+                        }
+                        for i, (p, cls) in enumerate(zip(poly_per, classes_per))
+                    ]
+                })
+        with open(f"{download_dir}/remo_annotations.json", "w") as f:
+            json.dump(annotations, f)
 
 convert_annotation_format = dataset_utils.annotation_format_converter(InstanceSegmentationAnnotation, FORMATS)
