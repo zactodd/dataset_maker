@@ -1142,6 +1142,35 @@ class CreateML(LocalisationAnnotation):
             json.dump(annotations, f)
 
 
+@strategy_method(LocalisationAnnotationFormats)
+class Remo(LocalisationAnnotation):
+    @staticmethod
+    def load(image_dir: str, annotations_dir: str) -> \
+            Tuple[List[str], List, List[np.ndarray], List[np.ndarray]]:
+        return
+
+    @staticmethod
+    def download(download_dir: str, image_names: List[str], images: List, bboxes: List[np.ndarray],
+                 classes: List[np.ndarray]) -> None:
+        annotations = []
+        for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
+            w, h = image.size
+            annotations.append(
+                {
+                    "file_name": name,
+                    "width": w,
+                    "height": h,
+                    "tags": [],
+                    "task": "Object detection",
+                    "annotations": [
+                        {"classes": [cls], "bbox": {"xmin": x0, "ymin": y0, "xmax": x1, "ymax": y1}}
+                        for i, ((y0, x0, y1, x1), cls) in enumerate(zip(bboxes_per, classes_per))
+                    ]
+                })
+        with open(f"{download_dir}/remo_annotations.json", "w") as f:
+            json.dump(annotations, f)
+
+
 def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir: str,
                               in_format: Union[LocalisationAnnotation, str],
                               out_format: Union[LocalisationAnnotation, str]) -> None:
