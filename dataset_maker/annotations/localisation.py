@@ -1125,11 +1125,16 @@ class CreateML(LocalisationAnnotation):
 
         annotations = [
             {
-                "image": f"{download_dir}/{name}",
+                "image": name,
                 "annotations": [
                     {
-                        "label": cls,
-                        "coordinates": {"x": x0, "y": y0, "width": x1 - x0, "height": y1 - y0}
+                        "label": str(cls),
+                        "coordinates": {
+                            "x": float(x0),
+                            "y": float(y0),
+                            "width": float(x1 - x0),
+                            "height": float(y1 - y0)
+                        }
 
                     }
                     for (y0, x0, y1, x1), cls in zip(bbox_per, classes_per)
