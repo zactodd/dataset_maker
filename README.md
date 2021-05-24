@@ -4,7 +4,7 @@
 ## Labled data conversion:
 | Problem | Method | Import | Export |
 | :---: | :---: | :---: | :---: |
-| **Object Detection** | VGG VIA | :heavy_check_mark: |  :heavy_check_mark: |
+| **Object Detection** | VGG | :heavy_check_mark: |  :heavy_check_mark: |
 |  | YOLO | :heavy_check_mark: | :heavy_check_mark: |
 |  | COCO | :heavy_check_mark: | :heavy_check_mark: |
 |  | Pascal VOC | :heavy_check_mark: | :heavy_check_mark: |
@@ -13,10 +13,13 @@
 |  | IBM Cloud | :heavy_check_mark: | :heavy_check_mark: |
 |  | VoTT CSV | :heavy_check_mark: | :heavy_check_mark: |
 |  | CreateML | :heavy_check_mark: | :heavy_check_mark: |
-| **Instance Segemenation** | VGG VIA | :heavy_check_mark: | :heavy_check_mark: |
-| | COCO*[1]  | :heavy_check_mark: | :heavy_check_mark: |
+| | Remo | :x: | :heavy_check_mark: |
+| **Instance Segmentation (Polygonal)** | VGG | :heavy_check_mark: | :heavy_check_mark: |
+| | COCO  | :heavy_check_mark: | :heavy_check_mark: |
+| | Remo | :x: | :heavy_check_mark: |
+| **Sematic Segmentation (Pixelwise/RLE)** | COCO | :x: | :x: |
+| | Pascal VOC | :x: | :x: |
 
-[1] Does not work on crowd data.
 
 Conversion script can be aceess using the following
 ```bash
