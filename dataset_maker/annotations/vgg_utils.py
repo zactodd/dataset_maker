@@ -88,7 +88,10 @@ def convert_annotations_to_polygon(annotations: Dict[str, Any], points: int = 32
         "ellipse": lambda x: ellipse_to_polygon(x, points),
     }
     for image_id, values in annotations.items():
-        for i, r in enumerate(values["regions"]):
+        regions = values["regions"]
+        if type(regions) == dict:
+            regions = regions.values()
+        for i, r in enumerate(regions):
             shape = r["shape_attributes"]
             if shape:
                 name = shape["name"]
