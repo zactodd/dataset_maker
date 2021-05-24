@@ -511,7 +511,7 @@ class COCO(LocalisationAnnotation):
             w, h = image.size
             images_info.append({"id": img_idx, "file_name": str(name), "width": int(w), "height": int(h)})
             for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per):
-                bbox = [float(x0), float(y0), float(x1), float(y1)]
+                bbox = [float(x0), float(y0), float(x1 - x0), float(y1 - y0)]
                 annotations_info.append({
                     "id": annotation_idx,
                     "image_id": img_idx,

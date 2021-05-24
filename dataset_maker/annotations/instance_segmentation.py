@@ -368,7 +368,7 @@ class COCO(InstanceSegmentationAnnotation):
                     "category_id": classes_dict[cls],
                     "iscrowd": 0,
                     "segmentation": [[int(p) for ps in zip(xs, ys) for p in ps]],
-                    "bbox": [int(x0), int(y0), int(x1 - x0), int(y1 - y0)],
+                    "bbox": [float(x0), float(y0), float(x1 - x0), float(y1 - y0)],
                     "area": int(utils.bbox_area(y0, x0, y1, x1))
                 })
                 annotation_idx += 1
