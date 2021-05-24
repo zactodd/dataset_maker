@@ -542,11 +542,12 @@ class YOLO(LocalisationAnnotation):
     """
 
     @staticmethod
-    def load(image_dir, annotations_dir) -> Tuple[list, list, list, list]:
+    def load(image_dir: str, annotations_dir: str, image_format: str = "png") -> Tuple[list, list, list, list]:
         """
         Loads a YOLO txt files and gets the names, images bounding boxes and classes for thr image.
         :param image_dir: THe directory of where the images are stored.
         :param annotations_dir: The directory of the annotations file.
+        :param image_format: The format of the images being used.
         :return: Returns names, images bounding boxes and classes
             The names will be a list of strings.
             The images will be a list of np.ndarray with the shapes (w, h, d).
@@ -563,28 +564,18 @@ class YOLO(LocalisationAnnotation):
         classes = []
         for file in annotation_files:
             file_path = f"{annotations_dir}/{file}"
+            image_path = f"{image_dir}/{file.strip('.txt')}.{image_format}"
+            name = re.split("/|\\\\", image_path)[-1]
+            names.append(name)
+
+            with Image.open(image_path) as image:
+                w, h = image.size
+                images.append(image)
+
+            bboxes_per = []
+            classes_per = []
+
             with open(file_path, "r") as f:
-                potential_images = []
-                for fmt in IMAGE_FORMATS:
-                    image_path = f"{image_dir}/{file.strip('.txt')}{fmt}"
-                    if os.path.exists(image_path):
-                        potential_images.append(image_path)
-
-                assert len(potential_images) != 0, \
-                    f"There is no image file in {image_dir} corresponding to the YOLO file {file_path}."
-                assert len(potential_images) == 1, \
-                    f"There are too many image file in {image_dir} corresponding to the YOLO file {file_path}."
-
-                image_path = potential_images[0]
-                name = re.split("/|\\\\", image_path)[-1]
-                names.append(name)
-
-                with Image.open(image_path) as image:
-                    w, h = image.size
-                    images.append(image)
-
-                bboxes_per = []
-                classes_per = []
                 for line in f.readlines():
                     cls, *bbox = line.split()
                     x0, y0, dx, dy = [float(p) for p in bbox]
@@ -635,19 +626,18 @@ class OIDv4(LocalisationAnnotation):
     """
 
     @staticmethod
-    def load(image_dir, annotations_dir) -> Tuple[list, list, list, list]:
+    def load(image_dir: str, annotations_dir: str, image_format: str = "png") -> Tuple[list, list, list, list]:
         """
         Loads a OIDv4 txt files and gets the names, images bounding boxes and classes for thr image.
         :param image_dir: THe directory of where the images are stored.
         :param annotations_dir: The directory of the annotations file.
+        :param image_format: The format of the images being used.
         :return: Returns names, images bounding boxes and classes
             The names will be a list of strings.
             The images will be a list of np.ndarray with the shapes (w, h, d).
             The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
             format [y0, x0, y1, x1].
             The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
-        :raise OSError: If there are no image files corresponding to an annotations txt filename.
-        :raise OSError: If there more than one image file corresponding to an annotations txt filename.
         """
         annotation_files = [f for f in os.listdir(annotations_dir) if f.endswith(".txt")]
         names = []
@@ -656,31 +646,22 @@ class OIDv4(LocalisationAnnotation):
         classes = []
         for file in annotation_files:
             file_path = f"{annotations_dir}/{file}"
+            image_path = f"{image_dir}/{file.strip('.txt')}.{image_format}"
+            name = re.split("/|\\\\", image_path)[-1]
+            names.append(name)
+
+            with Image.open(image_path) as image:
+                images.append(image)
+
+            bboxes_per = []
+            classes_per = []
+
             with open(file_path, "r") as f:
-                potential_images = []
-                for fmt in IMAGE_FORMATS:
-                    image_path = f"{image_dir}/{file.strip('.txt')}{fmt}"
-                    if os.path.exists(image_path):
-                        potential_images.append(image_path)
-
-                assert len(potential_images) != 0, \
-                    f"There is no image file in {image_dir} corresponding to the OIDv4 file {file_path}."
-                assert len(potential_images) == 1, \
-                    f"There are too many image file in {image_dir} corresponding to the OIDv4 file {file_path}."
-
-                image_path = potential_images[0]
-                name = re.split("/|\\\\", image_path)[-1]
-                names.append(name)
-
-                with Image.open(image_path) as image:
-                    images.append(image)
-                
-                bboxes_per = []
-                classes_per = []
                 for line in f.readlines():
                     cls, x0, y0, x1, y1 = line.split()
                     bboxes_per.append(np.asarray([y0, x0, y1, x1], dtype="int64"))
                     classes_per.append(cls)
+
             bboxes.append(np.asarray(bboxes_per))
             classes.append(np.asarray(classes_per))
         return names, images, bboxes, classes
@@ -753,7 +734,6 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
             annotations_file = potential_annotations[0]
 
         image_dict = defaultdict(lambda: {"bboxes": [], "classes": []})
-        print(os.path.exists(f"{annotations_dir}/{annotations_file}"))
         with open(f"{annotations_dir}/{annotations_file}", "r") as f:
             for row in csv.DictReader(f, delimiter=','):
                 name = row["filename"]
