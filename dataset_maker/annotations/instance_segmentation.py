@@ -318,15 +318,8 @@ class COCO(InstanceSegmentationAnnotation):
             x1, y1 = x0 + bb_width, y0 + bb_height
             image_dict[idx]["bboxes"].append(np.asarray([y0, x0, y1, x1], dtype="int64"))
             image_dict[idx]["classes"].append(classes_dict[annotation["category_id"]])
-
-            w, h = image_dict[idx]["image"].size
-
-            # TODO Implement workflow to allow pycocotools to be installed
-            if annotation["iscrowd"]:
-                raise NotImplementedError()
-            else:
-                segmentation = annotation["segmentation"][0]
-                poly = segmentation[::2], segmentation[1::2]
+            segmentation = annotation["segmentation"][0]
+            poly = segmentation[::2], segmentation[1::2]
             image_dict[idx]["polygons"].append(poly)
 
         names = []
