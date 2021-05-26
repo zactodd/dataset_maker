@@ -1154,8 +1154,7 @@ def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir
     out_format.download(download_dir, *in_format.load(image_dir, annotations_dir))
 
 
-convert_annotation_format = dataset_utils.annotation_format_converter(LocalisationAnnotation,
-                                                                      FORMATS)
+convert_annotation_format = dataset_utils.annotation_format_converter(LocalisationAnnotation, FORMATS)
 
 
 def convert_annotation_tf_record(image_dir: str, annotations_dir: str, download_dir: str,
