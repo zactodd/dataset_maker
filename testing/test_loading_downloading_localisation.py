@@ -81,8 +81,8 @@ class TestAnnotation:
     def test_same_num_bboxes(self):
         for n in self.names:
             try:
-                bbox = self.names_dict[n][1]
-                dl_bbox = self.dl_names_dict[n][1]
+                bbox = self.names_dict[n][2]
+                dl_bbox = self.dl_names_dict[n][2]
                 self.assertEqual(bbox.shape, dl_bbox.shape)
             except AssertionError as e:
                 self.verification_errors.append(str(e))
