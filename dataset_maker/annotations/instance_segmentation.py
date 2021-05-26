@@ -304,7 +304,7 @@ class COCO(InstanceSegmentationAnnotation):
 
         image_dict = {}
         for image_info in annotations["images"]:
-            with Image.OPEN(f"{image_dir}/{image_info['file_name']}") as image:
+            with Image.open(f"{image_dir}/{image_info['file_name']}") as image:
                 image_dict[image_info["id"]] = {
                     "bboxes": [],
                     "classes": [],
