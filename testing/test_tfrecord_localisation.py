@@ -198,6 +198,11 @@ class TestPascalVOC(TestAnnotation, unittest.TestCase):
         return anno.PascalVOC()
 
 
+class TestRemo(TestAnnotation, unittest.TestCase):
+    def anno_load(self):
+        return anno.Remo()
+
+
 class TestVGG(TestAnnotation, unittest.TestCase):
     def anno_load(self):
         return anno.VGG()

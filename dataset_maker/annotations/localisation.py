@@ -1127,6 +1127,133 @@ class CreateML(LocalisationAnnotation):
             json.dump(annotations, f)
 
 
+@strategy_method(LocalisationAnnotationFormats)
+class Remo(LocalisationAnnotation):
+    """
+    Localisation Annotation Class for the loading and downloading Remo annotations. Remo Annotation for use a .json
+    format. For example:
+    [
+      {
+        "file_name": "dog1.jpg",
+        "height": 500,
+        "width": 750,
+        "tags": [],
+        "task": "Object detection",
+        "annotations": [
+          {
+            "classes": [
+              "Dog"
+            ],
+            "bbox": {
+              "xmin": 339,
+              "ymin": 92.5,
+              "xmax": 629,
+              "ymax": 463.5
+            }
+          }
+        ]
+      },
+    ]
+    """
+
+    @staticmethod
+    def load(image_dir: str, annotations_dir: str, region_label: str = "label") -> \
+            Tuple[List[str], List, List[np.ndarray], List[np.ndarray]]:
+        """
+        Loads a Remo file and gets the names, images bounding boxes and classes for thr image.
+        :param image_dir: THe directory of where the images are stored.
+        :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
+        :param region_label: The key that identifies the label being loaded.
+        :return: Returns names, images bounding boxes and classes
+            The names will be a list of strings.
+            The images will be a list of PIL images.
+            The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
+            format [y0, x0, y1, x1].
+            The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
+        :raise AssertionError: If there is more than one json file in the directory of :param annotations_dir.
+        :raise AssertionError: If there is no json file in the directory of :param annotations_dir.
+        """
+        if annotations_dir.endswith(".json"):
+            annotations_file = annotations_dir
+        else:
+            potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".json")]
+            assert len(potential_annotations) != 0, \
+                f"There is no annotations .json file in {annotations_dir}."
+            assert len(potential_annotations) == 1, \
+                f"There are too many annotations .json files in {annotations_dir}."
+            annotations_file = potential_annotations[0]
+            annotations_file = f"{annotations_dir}/{annotations_file}"
+
+        with open(annotations_file, "r") as f:
+            annotations = json.load(f)
+
+        names = []
+        images = []
+        bboxes = []
+        classes = []
+        for annotation in annotations:
+            filename = annotation["file_name"]
+            names.append(filename)
+            with Image.open(f"{image_dir}/{filename}") as image:
+                images.append(image)
+
+            bboxes_per = []
+            classes_per = []
+            annotation_info = annotation["annotations"]
+
+            for a in annotation_info:
+                a_bbox = a["bbox"]
+                bbox = np.asarray([a_bbox["ymin"], a_bbox["xmin"], a_bbox["ymax"], a_bbox["xmax"]])
+                for c in a["classes"]:
+                    bboxes_per.append(bbox)
+                    classes_per.append(c)
+            bboxes.append(np.asarray(bboxes_per))
+            classes.append(np.asarray(classes_per))
+        return names, images, bboxes, classes
+
+    @staticmethod
+    def download(download_dir: str, image_names: List[str], images: List, bboxes: List[np.ndarray],
+                 classes: List[np.ndarray]) -> None:
+        """
+        Downloads a Remo json file to the :param download_dir with the filename annotations.
+        :param download_dir: The directory where the annotations are being downloaded.
+        :param image_names: The filenames of the image in the annotations. A list of strings.
+        :param images: The images being annotated, A list of PIL images.
+        :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
+            n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
+        :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
+            n being the number of bounding boxes for the image.
+        :raise AssertionError: The length of the params :param image_names, :param images :param bboxes and :param classes
+            must be the same.
+        """
+        assert len(image_names) == len(images) == len(bboxes) == len(classes), \
+            "The params image_names, images bboxes and classes must have the same length." \
+            f"len(image_names): {len(image_names)}\n" \
+            f"len(images): {len(images)}\n" \
+            f"len(bboxes): {len(bboxes)}\n" \
+            f"len(classes): {len(classes)}"
+
+        annotations = []
+        for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
+            w, h = image.size
+            annotations.append({
+                "file_name": name,
+                "height": h,
+                "width": w,
+                "tags": [],
+                "task": "Object detection",
+                "annotations": [
+                    {
+                        "classes": [str(cls)],
+                        "bbox": {"xmin": float(x0), "ymin": float(y0), "xmax": float(x1), "ymax": float(y1)}
+                    }
+                    for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per)
+                ]
+            })
+        with open(f"{download_dir}/remo_annotations.json", "w") as f:
+            json.dump(annotations, f)
+
+
 def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir: str,
                               in_format: Union[LocalisationAnnotation, str],
                               out_format: Union[LocalisationAnnotation, str]) -> None:
