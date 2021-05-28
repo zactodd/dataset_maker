@@ -16,7 +16,7 @@
 | | Remo | :heavy_check_mark: | :heavy_check_mark: |
 | **Instance Segmentation (Polygonal)** | VGG | :heavy_check_mark: | :heavy_check_mark: |
 | | COCO  | :heavy_check_mark: | :heavy_check_mark: |
-| | Remo | :x: | :x: |
+| | Remo | :heavy_check_mark: | :heavy_check_mark: |
 | **Sematic Segmentation (Pixelwise/RLE)** | COCO | :x: | :x: |
 | | Pascal VOC | :x: | :x: |
 
