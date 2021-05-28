@@ -179,7 +179,7 @@ class VGG(LocalisationAnnotation):
         :param region_label: The key that identifies the label being loaded.
         :return: Returns names, images bounding boxes and classes
             The names will be a list of strings.
-            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The images will be a list of PIL images.
             The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the 
             format [y0, x0, y1, x1].
             The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
@@ -232,7 +232,7 @@ class VGG(LocalisationAnnotation):
         Downloads a VGG json file to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. 
+        :param images: The images being annotated, A list of PIL images.
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -303,7 +303,7 @@ class PascalVOC(LocalisationAnnotation):
         :param annotations_dir: The directory of the annotations file.
         :return: Returns names, images bounding boxes and classes
             The names will be a list of strings.
-            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The images will be a list of PIL images.
             The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
             format [y0, x0, y1, x1].
             The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
@@ -340,7 +340,7 @@ class PascalVOC(LocalisationAnnotation):
         Downloads a Pascal VOC xml files to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. 
+        :param images: The images being annotated, A list of PIL images.
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -432,7 +432,7 @@ class COCO(LocalisationAnnotation):
         :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
         :return: Returns names, images bounding boxes and classes
             The names will be a list of strings.
-            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The images will be a list of PIL images.
             The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the 
             format [y0, x0, y1, x1].
             The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
@@ -488,7 +488,7 @@ class COCO(LocalisationAnnotation):
         Downloads a COCO json file to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. 
+        :param images: The images being annotated, A list of PIL images.
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -550,7 +550,7 @@ class YOLO(LocalisationAnnotation):
         :param image_format: The format of the images being used.
         :return: Returns names, images bounding boxes and classes
             The names will be a list of strings.
-            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The images will be a list of PIL images.
             The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
             format [y0, x0, y1, x1].
             The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
@@ -592,7 +592,7 @@ class YOLO(LocalisationAnnotation):
         Downloads a YOLO txt files to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. 
+        :param images: The images being annotated, A list of PIL images.
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -634,7 +634,7 @@ class OIDv4(LocalisationAnnotation):
         :param image_format: The format of the images being used.
         :return: Returns names, images bounding boxes and classes
             The names will be a list of strings.
-            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The images will be a list of PIL images.
             The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
             format [y0, x0, y1, x1].
             The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
@@ -673,7 +673,7 @@ class OIDv4(LocalisationAnnotation):
         Downloads a OIDv4 txt files to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. 
+        :param images: The images being annotated, A list of PIL images.
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -716,7 +716,7 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
         :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
         :return: Returns names, images bounding boxes and classes
             The names will be a list of strings.
-            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The images will be a list of PIL images.
             The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
             format [y0, x0, y1, x1].
             The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
@@ -760,7 +760,7 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
         Downloads a Tensorflow Object Detection CSV file to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. 
+        :param images: The images being annotated, A list of PIL images.
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -824,7 +824,7 @@ class IBMCloud(LocalisationAnnotation):
         :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
         :return: Returns names, images bounding boxes and classes
             The names will be a list of strings.
-            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The images will be a list of PIL images.
             The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
             format [y0, x0, y1, x1].
             The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
@@ -872,7 +872,7 @@ class IBMCloud(LocalisationAnnotation):
         Downloads a IBM CLoud json file to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. 
+        :param images: The images being annotated, A list of PIL images.
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -932,7 +932,7 @@ class VoTTCSV(LocalisationAnnotation):
         :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
         :return: Returns names, images bounding boxes and classes
             The names will be a list of strings.
-            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The images will be a list of PIL images.
             The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
             format [y0, x0, y1, x1].
             The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
@@ -977,7 +977,7 @@ class VoTTCSV(LocalisationAnnotation):
         Downloads a VoTT CSV file to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. 
+        :param images: The images being annotated, A list of PIL images.
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
@@ -1040,7 +1040,7 @@ class CreateML(LocalisationAnnotation):
         :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
         :return: Returns names, images bounding boxes and classes
             The names will be a list of strings.
-            The images will be a list of np.ndarray with the shapes (w, h, d).
+            The images will be a list of PIL images.
             The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
             format [y0, x0, y1, x1].
             The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
@@ -1088,7 +1088,7 @@ class CreateML(LocalisationAnnotation):
         Downloads a CreateML json file to the :param download_dir with the filename annotations.
         :param download_dir: The directory where the annotations are being downloaded.
         :param image_names: The filenames of the image in the annotations. A list of strings.
-        :param images: The images being annotated. 
+        :param images: The images being annotated, A list of PIL images.
         :param bboxes: The bounding boxes to be used as annotations. A list of np.ndarray with the shape (n, 4),
             n being the number of bounding boxes for the image and the bounding boxes in the format [y0, x0, y1, x1].
         :param classes: The classes information for the images. A list of np.ndarray with the shape (n, ),
