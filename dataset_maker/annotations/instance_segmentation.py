@@ -379,4 +379,132 @@ class COCO(InstanceSegmentationAnnotation):
             json.dump(data, f)
 
 
+@strategy_method(InstanceSegmentationAnnotationFormats)
+class Remo(InstanceSegmentationAnnotation):
+    """
+    Localisation Annotation Class for the loading and downloading Remo annotations. Remo Annotation for use a .json
+    format. For example:
+    [
+      {
+        "file_name": "dog1.jpg",
+        "height": 500,
+        "width": 750,
+        "tags": [],
+        "task": "Instance segmentation",
+        "annotations": [
+          {
+            "classes": [
+              "Dog"
+            ],
+            "segments": [
+              {
+                "x": 593,
+                "y": 392.5
+              },
+              {
+                "x": 469,
+                "y": 122.5
+              },
+              {
+                "x": 425,
+                "y": 138.5
+              }
+            ]
+          }
+        ]
+      },
+    ]
+    """
+
+    @staticmethod
+    def load(image_dir: str, annotations_dir: str, region_label: str = "label") -> \
+            Tuple[List[str], List, List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+        """
+        Loads a Remo file and gets the names, images bounding boxes and classes for thr image.
+        :param image_dir: THe directory of where the images are stored.
+        :param annotations_dir: Either a directory of the annotations file or the json annotations file its self.
+        :param region_label: The key that identifies the label being loaded.
+        :return: Returns names, images bounding boxes and classes
+            The names will be a list of strings.
+            The images will be a list of PIL images.
+            The bounding boxes will be a list of np.ndarray with the shape (n, 4) with the coordinates being the
+            format [y0, x0, y1, x1].
+            The classes will be a list of of np.ndarray with the shape (n,) and containing string information.
+        :raise AssertionError: If there is more than one json file in the directory of :param annotations_dir.
+        :raise AssertionError: If there is no json file in the directory of :param annotations_dir.
+        """
+        if annotations_dir.endswith(".json"):
+            annotations_file = annotations_dir
+        else:
+            potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith(".json")]
+            assert len(potential_annotations) != 0, \
+                f"There is no annotations .json file in {annotations_dir}."
+            assert len(potential_annotations) == 1, \
+                f"There are too many annotations .json files in {annotations_dir}."
+            annotations_file = potential_annotations[0]
+            annotations_file = f"{annotations_dir}/{annotations_file}"
+
+        with open(annotations_file, "r") as f:
+            annotations = json.load(f)
+
+        names = []
+        images = []
+        bboxes = []
+        polygons = []
+        classes = []
+        for annotation in annotations:
+            filename = annotation["file_name"]
+            names.append(filename)
+            with Image.open(f"{image_dir}/{filename}") as image:
+                images.append(image)
+
+            bboxes_per = []
+            classes_per = []
+            polys_per = []
+            annotation_info = annotation["annotations"]
+
+            for a in annotation_info:
+                segment = a["segments"]
+                xs, ys = zip(*[(s["x", s["y"]]) for s in segment])
+                bbox = utils.bbox(xs, ys)
+                for c in a["classes"]:
+                    bboxes_per.append(bbox)
+                    classes_per.append(c)
+                    polys_per.append((xs, ys))
+            bboxes.append(np.asarray(bboxes_per))
+            polygons.append(np.asarray(polys_per))
+            classes.append(np.asarray(classes_per))
+        return names, images, bboxes, polygons, classes
+
+    @staticmethod
+    def download(download_dir, image_names, images, bboxes, polygons, classes) -> None:
+        assert len(image_names) == len(images) == len(bboxes) == len(polygons) == len(classes), \
+            "The params image_names, images, bboxes, polygons and classes must have the same length." \
+            f"len(image_names): {len(image_names)}\n" \
+            f"len(images): {len(images)}\n" \
+            f"len(bboxes): {len(bboxes)}\n" \
+            f"len(polygons): {len(polygons)}" \
+            f"len(classes): {len(classes)}"
+
+        annotations = []
+        for name, image, polys_per, classes_per in zip(image_names, images, polygons, classes):
+            w, h = image.size
+            annotations.append({
+                "file_name": name,
+                "height": h,
+                "width": w,
+                "tags": [],
+                "task": "Instance segmentation",
+                "annotations": [
+                    {
+                        "classes": [str(cls)],
+                        "segments": [{"x": float(x), "y": float(y)} for x, y in poly]
+                    }
+                    for poly, cls in zip(polys_per, classes_per)
+                ]
+            })
+        with open(f"{download_dir}/remo_annotations.json", "w") as f:
+            json.dump(annotations, f)
+
+
 convert_annotation_format = dataset_utils.annotation_format_converter(InstanceSegmentationAnnotation, FORMATS)
