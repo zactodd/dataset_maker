@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Any, Tuple
+from typing import Any
 import numpy as np
-import matplotlib.pyplot as plt
 from dataset_maker import utils
 
 
@@ -19,9 +18,9 @@ class SingleSquare(DatasetMaker):
     def __init__(self, width=640, height=640, min_width=0, max_width=None):
         super().__init__()
         assert max_width is None or min_width < max_width, \
-            "min sample width must be smaller than the max sample width."
+            'min sample width must be smaller than the max sample width.'
         assert max_width is None or height > max_width < width, \
-            "THe max width must be smaller than the width and height of the image."
+            'THe max width must be smaller than the width and height of the image.'
         self.width = width
         self.height = height
 
@@ -95,7 +94,7 @@ class MultipleSquares(SingleSquare):
     def __init__(self, min_n_per_image=1, max_n_per_image=3, *args, **kwargs):
         super().__init__(*args, **kwargs)
         assert min_n_per_image <= max_n_per_image, \
-            "Min examples per image must be less or equal than the max examples per image"
+            'Min examples per image must be less or equal than the max examples per image'
         self.min_n_per_image = min_n_per_image
         self.max_n_per_image = max_n_per_image
 

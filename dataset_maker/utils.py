@@ -4,6 +4,7 @@ import skimage
 from typing import Iterable, Tuple, Dict, Any
 from itertools import islice
 import json
+import os
 
 
 def spec(n):
@@ -11,7 +12,7 @@ def spec(n):
     return np.round(np.clip(np.stack([-t, 510 - np.abs(t), t], axis=1), 0, 255)).astype(np.uint8)
 
 
-def bbox(x: Iterable[int], y: Iterable[int], out_format: str = "2p") -> Tuple[int, int, int, int]:
+def bbox(x: Iterable[int], y: Iterable[int], out_format: str = '2p') -> Tuple[int, int, int, int]:
     """
     Gets a bounding boxes from an iterator of x and y points.
     :param x: list of points in which the min and max are selected.
@@ -23,11 +24,11 @@ def bbox(x: Iterable[int], y: Iterable[int], out_format: str = "2p") -> Tuple[in
         width_height:
             y0, y1, height, width
     """
-    assert out_format in ("2p", "width_height")
+    assert out_format in ('2p', 'width_height')
     x0, x1, y0, y1 = min(x), max(x), min(y), max(y)
-    if out_format == "2p":
+    if out_format == '2p':
         return y0, x0, y1, x1
-    elif out_format == "width_height":
+    elif out_format == 'width_height':
         return y0, x0, y1 - y0, x1 - x0
     else:
         NotImplementedError()
@@ -38,7 +39,7 @@ def bbox_area(y0, x0, y1, x1):
 
 
 def polygon_to_mask(x, y, width, height):
-    assert len(x) == len(y), f"Length of both x and and y must be the same ({len(x)} != {len(y)})."
+    assert len(x) == len(y), f'Length of both x and and y must be the same ({len(x)} != {len(y)}).'
     m = np.zeros((width, height), dtype=np.uint8)
     rr, cc = skimage.draw.polygon(y, x)
     m[rr, cc] = 1
