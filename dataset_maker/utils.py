@@ -1,8 +1,9 @@
 import numpy as np
 import skimage
 # import pycocotools
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, Dict, Any
 from itertools import islice
+import json
 
 
 def spec(n):
@@ -48,6 +49,26 @@ def chunks(data, size):
     it = iter(data)
     for i in range(0, len(data), size):
         yield {k: data[k] for k in islice(it, size)}
+
+
+def open_json_from_file_or_dir(annotations_dir: str) -> Dict[str, Any]:
+    """
+    Opens json file given a directory or the file path.
+    :param annotations_dir: The directory of the json file or a directory containing a json files.
+    :return: The opened json file.
+    """
+    if annotations_dir.endswith('.json'):
+        annotations_file = annotations_dir
+    else:
+        potential_annotations = [f for f in os.listdir(annotations_dir) if f.endswith('.json')]
+        assert len(potential_annotations) != 0, \
+            f'There is no annotations .json file in {annotations_dir}.'
+        assert len(potential_annotations) == 1, \
+            f'There are too many annotations .json files in {annotations_dir}.'
+        annotations_file = potential_annotations[0]
+        annotations_file = f'{annotations_dir}/{annotations_file}'
+    with open(annotations_file, 'r') as f:
+        return json.load(f)
 
 
 # TODO Implement workflow to allow pycocotools to be installed
