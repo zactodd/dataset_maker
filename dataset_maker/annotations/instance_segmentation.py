@@ -1,5 +1,5 @@
 from dataset_maker.annotations.download_upload import LoaderDownloader
-from dataset_maker.patterns import SingletonStrategies, strategy_method
+from dataset_maker.patterns import registry
 from abc import ABCMeta, abstractmethod
 from typing import Tuple, List, Dict, Any
 import numpy as np
@@ -13,21 +13,7 @@ import contextlib2
 from PIL import Image
 
 
-class InstanceSegmentationAnnotationFormats(SingletonStrategies):
-    """
-    Singleton for holding instance segmentation annotation formats.
-    """
-    def __init__(self):
-        super().__init__()
-
-    def __str__(self):
-        return 'Annotations formats: \n' + \
-               '\n'.join([f'{i:3}: {n}' for i, (n, _) in enumerate(self.strategies.values())])
-
-
-FORMATS = InstanceSegmentationAnnotationFormats()
-
-
+@registry
 class InstanceSegmentationAnnotation(LoaderDownloader, metaclass=ABCMeta):
     """
     Abstract base class for InstanceSegmentationAnnotation as a Loader.
@@ -109,7 +95,6 @@ class InstanceSegmentationAnnotation(LoaderDownloader, metaclass=ABCMeta):
                 output_tfrecords[shard_idx].write(tf_example.SerializeToString())
 
 
-@strategy_method(InstanceSegmentationAnnotationFormats)
 class VGG(InstanceSegmentationAnnotation):
     """
     Instance Segmentation Annotation Class for the loading and downloading VGG annotations. VGG Annotation for use a .json
@@ -223,7 +208,6 @@ class VGG(InstanceSegmentationAnnotation):
             json.dump(annotations, f)
 
 
-@strategy_method(InstanceSegmentationAnnotationFormats)
 class COCO(InstanceSegmentationAnnotation):
     """
     Instance Segmentation Annotation Class for the loading and downloading COCO annotations. COCO Annotation for use a .json
@@ -354,7 +338,6 @@ class COCO(InstanceSegmentationAnnotation):
             json.dump(data, f)
 
 
-@strategy_method(InstanceSegmentationAnnotationFormats)
 class Remo(InstanceSegmentationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading Remo annotations. Remo Annotation for use a .json
@@ -470,35 +453,7 @@ class Remo(InstanceSegmentationAnnotation):
         with open(f"{download_dir}/remo_annotations.json", "w") as f:
             json.dump(annotations, f)
 
-convert_annotation_format = dataset_utils.annotation_format_converter(InstanceSegmentationAnnotation, FORMATS)
-            'The params image_names, images, bboxes, polygons and classes must have the same length.' \
-            f'len(image_names): {len(image_names)}\n' \
-            f'len(images): {len(images)}\n' \
-            f'len(bboxes): {len(bboxes)}\n' \
-            f'len(polygons): {len(polygons)}' \
-            f'len(classes): {len(classes)}'
 
-        annotations = []
-        for name, image, polys_per, classes_per in zip(image_names, images, polygons, classes):
-            w, h = image.size
-            annotations.append({
-                'file_name': name,
-                'height': h,
-                'width': w,
-                'tags': [],
-                'task': 'Instance segmentation',
-                'annotations': [
-                    {
-                        'classes': [str(cls)],
-                        'segments': [{'x': float(x), 'y': float(y)} for x, y in poly]
-                    }
-                    for poly, cls in zip(polys_per, classes_per)
-                ]
-            })
-        with open(f'{download_dir}/remo_annotations.json', 'w') as f:
-            json.dump(annotations, f)
-
-
-convert_annotation_format = dataset_utils.annotation_format_converter(InstanceSegmentationAnnotation, FORMATS)
+convert_annotation_format = dataset_utils.annotation_format_converter(InstanceSegmentationAnnotation)
 
 
