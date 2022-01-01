@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import contextlib2
 from typing import List
+from download_upload import LoaderDownloader
 
 
 def int64_feature(value):
@@ -70,7 +71,7 @@ def open_sharded_tfrecords_with_splits(exit_stack: contextlib2.ExitStack, base_p
     ]
 
 
-def annotation_format_converter(t, singleton_stragies):
+def annotation_format_converter(registry):
     def wrapper(image_dir, annotations_dir, download_dir, in_format, out_format) -> None:
         """
         Converts annotation from one format to another.
@@ -82,16 +83,18 @@ def annotation_format_converter(t, singleton_stragies):
         :raise AssertionError: If in_format is not string or InstanceSegmentationAnnotation.
         :raise AssertionError: If out_format is not string or InstanceSegmentationAnnotation.
         """
-        assert isinstance(in_format, (t, str)), \
-            f'in_format: {in_format} need to string or {t}.'
-        assert isinstance(out_format, (t, str)), \
-            f'out_format: {out_format} need to string or InstanceSegmentationAnnotation.'
+        assert issubclass(registry, LoaderDownloader), 'The registry must be an instance of LoaderDownloader.'
+
+        assert isinstance(in_format, (registry, str)), \
+            f'in_format: {in_format} need to string or {type(registry)}.'
+        assert isinstance(out_format, (registry, str)), \
+            f'out_format: {out_format} need to string or {type(registry)}.'
 
         if isinstance(in_format, str):
-            in_format = singleton_stragies.get(in_format)
+            in_format = registry(in_format)
 
         if isinstance(out_format, str):
-            out_format = singleton_stragies.get(out_format)
+            out_format = registry(out_format)
 
         out_format.download(download_dir, *in_format.load(image_dir, annotations_dir))
     return wrapper
