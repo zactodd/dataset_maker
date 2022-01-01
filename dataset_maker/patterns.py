@@ -54,8 +54,8 @@ def strategy_method(parent: Type[SingletonStrategies], name: str = None) -> F:
     return inner
 
 
-def registry(cls):
-    class Wrapper:
+def registry(parent):
+    class Wrapper(parent):
         _registry = {}
 
         def __init_subclass__(cls, name=None, *args, **kwargs):
