@@ -9,7 +9,7 @@ class Singleton(type):
     instance.
     """
     def __init__(cls, name, bases, attrs, **kwargs):
-        super().__init__(name, bases, attrs)
+        super().__init__(name, bases, attrs, **kwargs)
         cls._instance = None
 
     def __call__(cls, *args, **kwargs):
@@ -52,3 +52,16 @@ def strategy_method(parent: Type[SingletonStrategies], name: str = None) -> F:
         parent().add(cls.__name__ if name is None else name, cls)
         return cls
     return inner
+
+
+class Register(metaclass=ABCMeta):
+    _registry = {}
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls._registry[cls.__name__] = cls
+
+    def __new__(cls, *args, **kwargs):
+        subclass = cls._registry[cls.__name__]
+        obj = object.__new__(subclass)
+        return obj
