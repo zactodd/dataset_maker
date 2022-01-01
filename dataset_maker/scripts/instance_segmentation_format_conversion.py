@@ -1,4 +1,4 @@
-from dataset_maker.annotations.localisation import convert_annotation_format
+from dataset_maker.annotations.instance_segmentation import convert_annotation_format
 import sys
 import argparse
 

@@ -31,12 +31,12 @@ class TestHelper(metaclass=Singleton):
 
             dm = maker.MulticlassMultipleSquares(min_width=50, max_width=100)
             self.images, self.bboxes, self.classes = dm.make(10)
-            self.names = [f"img_{i}.png" for i in range(len(self.images))]
+            self.names = [f'img_{i}.png' for i in range(len(self.images))]
             self.names_dict = {n: d for n, *d in zip(self.names, self.images, self.bboxes, self.classes)}
 
             with tempfile.TemporaryDirectory() as td:
                 for name, image in zip(self.names, self.images):
-                    plt.imsave(f"{td}/{name}", image)
+                    plt.imsave(f'{td}/{name}', image)
 
                 self.images = [Image.fromarray(np.uint8(i) * 255) for i in self.images]
                 annotation.download(td, self.names, self.images, self.bboxes, self.classes)
@@ -81,8 +81,8 @@ class TestAnnotation:
     def test_same_num_bboxes(self):
         for n in self.names:
             try:
-                bbox = self.names_dict[n][1]
-                dl_bbox = self.dl_names_dict[n][1]
+                bbox = self.names_dict[n][2]
+                dl_bbox = self.dl_names_dict[n][2]
                 self.assertEqual(bbox.shape, dl_bbox.shape)
             except AssertionError as e:
                 self.verification_errors.append(str(e))
@@ -93,7 +93,7 @@ class TestAnnotation:
                 bbox = self.names_dict[n][1]
                 dl_bbox = self.dl_names_dict[n][1]
                 diff = np.abs(bbox - dl_bbox)
-                self.assertTrue(np.all(diff <= 1), msg=f"The bboxs differ by more than one pixel. \n{bbox}\n{dl_bbox}")
+                self.assertTrue(np.all(diff <= 1), msg=f'The bboxs differ by more than one pixel. \n{bbox}\n{dl_bbox}')
             except AssertionError as e:
                 self.verification_errors.append(str(e))
 
@@ -115,6 +115,11 @@ class TestAnnotation:
 class TestPascalVOC(TestAnnotation, unittest.TestCase):
     def anno_load(self):
         return anno.PascalVOC()
+
+
+class TestRemo(TestAnnotation, unittest.TestCase):
+    def anno_load(self):
+        return anno.Remo()
 
 
 class TestVGG(TestAnnotation, unittest.TestCase):

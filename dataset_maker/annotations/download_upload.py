@@ -1,9 +1,7 @@
 from abc import ABCMeta, abstractmethod
-from typing import Any, Sized, Generator, Iterator
+from typing import Any
 import os
 import numpy as np
-from tqdm import tqdm
-from collections import defaultdict
 
 
 class Loader(metaclass=ABCMeta):
@@ -29,11 +27,11 @@ class Downloader(metaclass=ABCMeta):
     def download(self, download_dir, *args, **kwargs) -> None:
         pass
 
-    def split_download(self, download_dir, *args, ratios=(0.8, 0.1, 0.1), spilt_names=("train", "val", "test"),
+    def split_download(self, download_dir, *args, ratios=(0.8, 0.1, 0.1), spilt_names=('train', 'val', 'test'),
                        **kwargs):
         assert len(ratios) == len(spilt_names), \
-            "There needs to be the same number of names as split ratios."
-        assert all(len(args[0]) == len(a) for a in args[1:]), "all args must have the same length."
+            'There needs to be the same number of names as split ratios.'
+        assert all(len(args[0]) == len(a) for a in args[1:]), 'all args must have the same length.'
 
         # Creating directories for split files
         paths = []

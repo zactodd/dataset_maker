@@ -83,9 +83,9 @@ def annotation_format_converter(t, singleton_stragies):
         :raise AssertionError: If out_format is not string or InstanceSegmentationAnnotation.
         """
         assert isinstance(in_format, (t, str)), \
-            f"in_format: {in_format} need to string or {t}."
+            f'in_format: {in_format} need to string or {t}.'
         assert isinstance(out_format, (t, str)), \
-            f"out_format: {out_format} need to string or InstanceSegmentationAnnotation."
+            f'out_format: {out_format} need to string or InstanceSegmentationAnnotation.'
 
         if isinstance(in_format, str):
             in_format = singleton_stragies.get(in_format)

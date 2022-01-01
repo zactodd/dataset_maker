@@ -13,15 +13,10 @@
 |  | IBM Cloud | :heavy_check_mark: | :heavy_check_mark: |
 |  | VoTT CSV | :heavy_check_mark: | :heavy_check_mark: |
 |  | CreateML | :heavy_check_mark: | :heavy_check_mark: |
-| | Remo | :x: | :x: |
-| | Google Cloud AutoML Vision | :x: | :x: |
-| | SuperAnnotate | :x: | :x: |
-| | LabelBox | :x: | :x: | :X: |
+| | Remo | :heavy_check_mark: | :heavy_check_mark: |
 | **Instance Segmentation (Polygonal)** | VGG | :heavy_check_mark: | :heavy_check_mark: |
 | | COCO  | :heavy_check_mark: | :heavy_check_mark: |
-| | Remo | :x: | :x: |
-| | SuperAnnotate | :x: | :x: |
-| | LabelBox | :x: | :x: | :X: |
+| | Remo | :heavy_check_mark: | :heavy_check_mark: |
 | **Sematic Segmentation (Pixelwise/RLE)** | COCO | :x: | :x: |
 | | Pascal VOC | :x: | :x: |
 

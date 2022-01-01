@@ -29,18 +29,18 @@ class TestHelper(metaclass=Singleton):
 
             dm = maker.MulticlassMultipleSquares(min_width=50, max_width=100)
             self.images, self.bboxes, self.classes = dm.make(10)
-            self.names = [f"img_{i}.png" for i in range(len(self.images))]
+            self.names = [f'img_{i}.png' for i in range(len(self.images))]
             self.names_dict = {n: d for n, *d in zip(self.names, self.images, self.bboxes, self.classes)}
 
             with tempfile.TemporaryDirectory() as td:
                 for name, image in zip(self.names, self.images):
-                    plt.imsave(f"{td}/{name}", image)
+                    plt.imsave(f'{td}/{name}', image)
 
                 self.images = [Image.fromarray(np.uint8(i) * 255) for i in self.images]
                 annotation.download(td, self.names, self.images, self.bboxes, self.classes)
 
-                self.annotation.create_tfrecord(td, td, f"{td}/tfrecord", 1)
-                tfrecord_files = [f"{td}/{f}" for f in os.listdir(td) if "tfrecord" in f]
+                self.annotation.create_tfrecord(td, td, f'{td}/tfrecord', 1)
+                tfrecord_files = [f'{td}/{f}' for f in os.listdir(td) if 'tfrecord' in f]
                 self.tf_examples = list(tf.compat.v1.io.tf_record_iterator(tfrecord_files[0]))
 
 
@@ -72,7 +72,7 @@ class TestAnnotation:
         for example in self.tf_examples:
             result = tf.train.SequenceExample.FromString(example)
             try:
-                self.assertNotEqual("", str(result.context.feature["image/encoded"]))
+                self.assertNotEqual('', str(result.context.feature['image/encoded']))
             except AssertionError as e:
                 self.verification_errors.append(str(e))
 
@@ -80,7 +80,7 @@ class TestAnnotation:
         for example in self.tf_examples:
             result = tf.train.SequenceExample.FromString(example)
             try:
-                self.assertNotEqual("", str(result.context.feature["image/source_id"]))
+                self.assertNotEqual('', str(result.context.feature['image/source_id']))
             except AssertionError as e:
                 self.verification_errors.append(str(e))
 
@@ -88,7 +88,7 @@ class TestAnnotation:
         for example in self.tf_examples:
             result = tf.train.SequenceExample.FromString(example)
             try:
-                self.assertNotEqual("", str(result.context.feature["image/filename"]))
+                self.assertNotEqual('', str(result.context.feature['image/filename']))
             except AssertionError as e:
                 self.verification_errors.append(str(e))
 
@@ -96,7 +96,7 @@ class TestAnnotation:
         for example in self.tf_examples:
             result = tf.train.SequenceExample.FromString(example)
             try:
-                self.assertNotEqual("", str(result.context.feature["image/format"]))
+                self.assertNotEqual('', str(result.context.feature['image/format']))
             except AssertionError as e:
                 self.verification_errors.append(str(e))
 
@@ -104,7 +104,7 @@ class TestAnnotation:
         for example in self.tf_examples:
             result = tf.train.SequenceExample.FromString(example)
             try:
-                self.assertNotEqual("", str(result.context.feature["image/width"]))
+                self.assertNotEqual('', str(result.context.feature['image/width']))
             except AssertionError as e:
                 self.verification_errors.append(str(e))
 
@@ -112,7 +112,7 @@ class TestAnnotation:
         for example in self.tf_examples:
             result = tf.train.SequenceExample.FromString(example)
             try:
-                self.assertNotEqual("", str(result.context.feature["image/height"]))
+                self.assertNotEqual('', str(result.context.feature['image/height']))
             except AssertionError as e:
                 self.verification_errors.append(str(e))
 
@@ -120,7 +120,7 @@ class TestAnnotation:
         for example in self.tf_examples:
             result = tf.train.SequenceExample.FromString(example)
             try:
-                self.assertNotEqual("", str(result.context.feature["image/object/bbox/xmin"]))
+                self.assertNotEqual('', str(result.context.feature['image/object/bbox/xmin']))
             except AssertionError as e:
                 self.verification_errors.append(str(e))
 
@@ -128,7 +128,7 @@ class TestAnnotation:
         for example in self.tf_examples:
             result = tf.train.SequenceExample.FromString(example)
             try:
-                self.assertNotEqual("", str(result.context.feature["image/object/bbox/ymin"]))
+                self.assertNotEqual('', str(result.context.feature['image/object/bbox/ymin']))
             except AssertionError as e:
                 self.verification_errors.append(str(e))
 
@@ -136,7 +136,7 @@ class TestAnnotation:
         for example in self.tf_examples:
             result = tf.train.SequenceExample.FromString(example)
             try:
-                self.assertNotEqual("", str(result.context.feature["image/object/bbox/xmax"]))
+                self.assertNotEqual('', str(result.context.feature['image/object/bbox/xmax']))
             except AssertionError as e:
                 self.verification_errors.append(str(e))
 
@@ -144,7 +144,7 @@ class TestAnnotation:
         for example in self.tf_examples:
             result = tf.train.SequenceExample.FromString(example)
             try:
-                self.assertNotEqual("", str(result.context.feature["image/object/bbox/ymax"]))
+                self.assertNotEqual('', str(result.context.feature['image/object/bbox/ymax']))
             except AssertionError as e:
                 self.verification_errors.append(str(e))
 
@@ -152,7 +152,7 @@ class TestAnnotation:
         for example in self.tf_examples:
             result = tf.train.SequenceExample.FromString(example)
             try:
-                self.assertNotEqual("", str(result.context.feature["image/object/class/text"]))
+                self.assertNotEqual('', str(result.context.feature['image/object/class/text']))
             except AssertionError as e:
                 self.verification_errors.append(str(e))
 
@@ -160,7 +160,7 @@ class TestAnnotation:
         for example in self.tf_examples:
             result = tf.train.SequenceExample.FromString(example)
             try:
-                self.assertNotEqual("", str(result.context.feature["image/object/class/label"]))
+                self.assertNotEqual('', str(result.context.feature['image/object/class/label']))
             except AssertionError as e:
                 self.verification_errors.append(str(e))
 
@@ -169,10 +169,10 @@ class TestAnnotation:
             result = tf.train.SequenceExample.FromString(example)
             feature = result.context.feature
             try:
-                ymins = [float(y.strip("  value:").strip(", "))
-                         for y in str(feature["image/object/bbox/ymin"]).split("\n")[1:-2]]
-                ymaxs = [float(y.strip("  value:").strip(", "))
-                         for y in str(feature["image/object/bbox/ymax"]).split("\n")[1:-2]]
+                ymins = [float(y.strip('  value:').strip(', '))
+                         for y in str(feature['image/object/bbox/ymin']).split('\n')[1:-2]]
+                ymaxs = [float(y.strip('  value:').strip(', '))
+                         for y in str(feature['image/object/bbox/ymax']).split('\n')[1:-2]]
                 for y0, y1 in zip(ymins, ymaxs):
                     self.assertGreaterEqual(y1, y0)
             except AssertionError as e:
@@ -183,10 +183,10 @@ class TestAnnotation:
             result = tf.train.SequenceExample.FromString(example)
             feature = result.context.feature
             try:
-                xmins = [float(y.strip("  value:").strip(", "))
-                         for y in str(feature["image/object/bbox/xmin"]).split("\n")[1:-2]]
-                xmaxs = [float(y.strip("  value:").strip(", "))
-                         for y in str(feature["image/object/bbox/xmax"]).split("\n")[1:-2]]
+                xmins = [float(y.strip('  value:').strip(', '))
+                         for y in str(feature['image/object/bbox/xmin']).split('\n')[1:-2]]
+                xmaxs = [float(y.strip('  value:').strip(', '))
+                         for y in str(feature['image/object/bbox/xmax']).split('\n')[1:-2]]
                 for x0, x1 in zip(xmins, xmaxs):
                     self.assertGreaterEqual(x1, x0)
             except AssertionError as e:
@@ -196,6 +196,11 @@ class TestAnnotation:
 class TestPascalVOC(TestAnnotation, unittest.TestCase):
     def anno_load(self):
         return anno.PascalVOC()
+
+
+class TestRemo(TestAnnotation, unittest.TestCase):
+    def anno_load(self):
+        return anno.Remo()
 
 
 class TestVGG(TestAnnotation, unittest.TestCase):
