@@ -18,7 +18,7 @@ class InstanceSegmentationAnnotation(LoaderDownloader, metaclass=ABCMeta):
     """
     Abstract base class for InstanceSegmentationAnnotation as a Loader.
     """
-    def __init__(self):
+    def __init__(self, name=None, *args, **kwargs) -> None:
         super().__init__()
 
     @staticmethod

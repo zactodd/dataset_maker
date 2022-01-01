@@ -27,7 +27,7 @@ class LocalisationAnnotation(LoaderDownloader):
 
 
     def __init__(self, name=None, *args, **kwargs) -> None:
-        super().__init__(name, *args, **kwargs)
+        super().__init__()
 
     def create_tfrecord(self, image_dir: str, annotations_file: str, output_dir: str, num_shards: int = 1,
                         shard_splits: Optional[Tuple[float]] = None, split_names=Optional[Tuple[str]],
