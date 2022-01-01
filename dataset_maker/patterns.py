@@ -54,14 +54,18 @@ def strategy_method(parent: Type[SingletonStrategies], name: str = None) -> F:
     return inner
 
 
-class Register(metaclass=ABCMeta):
-    _registry = {}
+def registry(cls):
+    class Wrapper:
+        _registry = {}
 
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        cls._registry[cls.__name__] = cls
+        def __init_subclass__(cls, name=None, *args, **kwargs):
+            super().__init_subclass__(*args, **kwargs)
+            cls._registry[cls.__name__ if name is None else name] = cls
 
-    def __new__(cls, *args, **kwargs):
-        subclass = cls._registry[cls.__name__]
-        obj = object.__new__(subclass)
-        return obj
+        def __new__(cls, name=None, *args, **kwargs):
+            subclass = cls._registry[cls.__name__ if name is None else name]
+            obj = object.__new__(subclass)
+            return obj
+    return Wrapper
+
+
