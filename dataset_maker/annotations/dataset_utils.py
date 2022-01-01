@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import contextlib2
 from typing import List
-from download_upload import LoaderDownloader
+from dataset_maker.annotations.download_upload import LoaderDownloader
 
 
 def int64_feature(value):
