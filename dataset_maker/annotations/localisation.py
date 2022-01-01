@@ -1,8 +1,7 @@
 import csv
 import hashlib
-from dataset_maker.patterns import SingletonStrategies, strategy_method
+from dataset_maker.patterns import registry
 from dataset_maker.annotations.download_upload import LoaderDownloader
-from abc import ABCMeta, abstractmethod
 from typing import Tuple, List, Union, Dict, Optional
 import numpy as np
 from xml.etree import ElementTree
@@ -20,40 +19,15 @@ from PIL import Image
 IMAGE_FORMATS = ('.png', '.PNG', '.jpg', '.JPG', '.jpeg', '.JPEG')
 
 
-class LocalisationAnnotationFormats(SingletonStrategies):
-    """
-    Singleton for holding localisation annotation formats.
-    """
-
-    def __init__(self):
-        super().__init__()
-
-    @staticmethod
-    @abstractmethod
-    def load(image_dir: str, annotations_file: str) -> \
-            Tuple[List[str], List, List[np.ndarray], List[np.ndarray]]:
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def download(download_dir, image_names, images, bboxes, classes) -> None:
-        pass
-
-    def __str__(self):
-        return 'Annotations formats: \n' + \
-               '\n'.join([f'{i:3}: {n}' for i, (n, _) in enumerate(self.strategies.values())])
-
-
-FORMATS = LocalisationAnnotationFormats()
-
-
-class LocalisationAnnotation(LoaderDownloader, metaclass=ABCMeta):
+@registry
+class LocalisationAnnotation(LoaderDownloader):
     """
     Abstract base class for LocalisationAnnotation as a LoaderDownloader.
     """
 
-    def __init__(self) -> None:
-        super().__init__()
+
+    def __init__(self, name=None, *args, **kwargs) -> None:
+        super().__init__(name, *args, **kwargs)
 
     def create_tfrecord(self, image_dir: str, annotations_file: str, output_dir: str, num_shards: int = 1,
                         shard_splits: Optional[Tuple[float]] = None, split_names=Optional[Tuple[str]],
@@ -134,7 +108,6 @@ class LocalisationAnnotation(LoaderDownloader, metaclass=ABCMeta):
                 output_tfrecords[shard_idx].write(tf_example.SerializeToString())
 
 
-@strategy_method(LocalisationAnnotationFormats)
 class VGG(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading VGG annotations. VGG Annotation for use a .json
@@ -256,7 +229,6 @@ class VGG(LocalisationAnnotation):
             json.dump(annotations, f)
 
 
-@strategy_method(LocalisationAnnotationFormats)
 class PascalVOC(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading Pascal VOC annotations.
@@ -376,7 +348,6 @@ class PascalVOC(LocalisationAnnotation):
                 f.write(ElementTree.tostring(root))
 
 
-@strategy_method(LocalisationAnnotationFormats)
 class COCO(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading COCO annotations. COCO Annotation for use a .json
@@ -508,7 +479,6 @@ class COCO(LocalisationAnnotation):
             json.dump(data, f)
 
 
-@strategy_method(LocalisationAnnotationFormats)
 class YOLO(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading YOLO annotations.
@@ -592,7 +562,6 @@ class YOLO(LocalisationAnnotation):
                     f.write(f'{classes_dict[cls]} {x0 / w} {y0 / h} {(x1 - x0) / w} {(y1 - y0) / h}\n')
 
 
-@strategy_method(LocalisationAnnotationFormats)
 class OIDv4(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading OIDv4 annotations.
@@ -670,7 +639,6 @@ class OIDv4(LocalisationAnnotation):
                 f.writelines(f'{cls} {x0} {y0} {x1} {y1}\n' for (y0, x0, y1, x1), cls in zip(bboxes_per, classes_per))
 
 
-@strategy_method(LocalisationAnnotationFormats)
 class TensorflowObjectDetectionCSV(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading Tensorflow Object Detection CSV annotations.
@@ -770,7 +738,6 @@ class TensorflowObjectDetectionCSV(LocalisationAnnotation):
                     })
 
 
-@strategy_method(LocalisationAnnotationFormats)
 class IBMCloud(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading VGG annotations. IBM Cloud uses a .json format.
@@ -875,7 +842,6 @@ class IBMCloud(LocalisationAnnotation):
             json.dump(annotations, f)
 
 
-@strategy_method(LocalisationAnnotationFormats)
 class VoTTCSV(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading VoTT CSV annotations.
@@ -971,7 +937,6 @@ class VoTTCSV(LocalisationAnnotation):
                     })
 
 
-@strategy_method(LocalisationAnnotationFormats)
 class CreateML(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading CreateML annotations.
@@ -1078,7 +1043,6 @@ class CreateML(LocalisationAnnotation):
             json.dump(annotations, f)
 
 
-@strategy_method(LocalisationAnnotationFormats)
 class Remo(LocalisationAnnotation):
     """
     Localisation Annotation Class for the loading and downloading Remo annotations. Remo Annotation for use a .json
@@ -1193,65 +1157,6 @@ class Remo(LocalisationAnnotation):
             json.dump(annotations, f)
 
 
-@strategy_method(LocalisationAnnotationFormats)
-class Remo(LocalisationAnnotation):
-    @staticmethod
-    def load(image_dir: str, annotations_dir: str) -> \
-            Tuple[List[str], List, List[np.ndarray], List[np.ndarray]]:
-        return
-
-    @staticmethod
-    def download(download_dir: str, image_names: List[str], images: List, bboxes: List[np.ndarray],
-                 classes: List[np.ndarray]) -> None:
-        annotations = []
-        for name, image, bboxes_per, classes_per in zip(image_names, images, bboxes, classes):
-            w, h = image.size
-            annotations.append(
-                {
-                    "file_name": name,
-                    "width": w,
-                    "height": h,
-                    "tags": [],
-                    "task": "Object detection",
-                    "annotations": [
-                        {"classes": [cls], "bbox": {"xmin": x0, "ymin": y0, "xmax": x1, "ymax": y1}}
-                        for i, ((y0, x0, y1, x1), cls) in enumerate(zip(bboxes_per, classes_per))
-                    ]
-                })
-        with open(f"{download_dir}/remo_annotations.json", "w") as f:
-            json.dump(annotations, f)
-
-
-def convert_annotation_format(image_dir: str, annotations_dir: str, download_dir: str,
-                              in_format: Union[LocalisationAnnotation, str],
-                              out_format: Union[LocalisationAnnotation, str]) -> None:
-    """
-    Converts localisation annotation from one format to another.
-    :param image_dir: THe directory of where the images are stored.
-    :param annotations_dir: The directory of the annotations file.
-    :param download_dir: The directory where the annotations are being downloaded.
-    :param in_format: The name of the format being converted from.
-    :param out_format: The name of the format being converted to.
-    :raise AssertionError: If in_format is not string or LocalisationAnnotation.
-    :raise AssertionError: If out_format is not string or LocalisationAnnotation.
-    """
-    assert isinstance(in_format, (LocalisationAnnotation, str)), \
-        f'in_format: {in_format} need to string or LocalisationAnnotation.'
-    assert isinstance(out_format, (LocalisationAnnotation, str)), \
-        f'out_format: {out_format} need to string or LocalisationAnnotation.'
-
-    if isinstance(in_format, str):
-        in_format = LocalisationAnnotationFormats.get(in_format)
-
-    if isinstance(out_format, str):
-        out_format = LocalisationAnnotationFormats.get(out_format)
-
-    out_format.download(download_dir, *in_format.load(image_dir, annotations_dir))
-
-
-convert_annotation_format = dataset_utils.annotation_format_converter(LocalisationAnnotation, FORMATS)
-
-
 def convert_annotation_tf_record(image_dir: str, annotations_dir: str, download_dir: str,
                                  annotation_format: Union[LocalisationAnnotation, str], num_shard=1,
                                  shard_splits: Optional[Tuple[float]] = None, split_names: Optional[Tuple[str]] = None,
@@ -1274,7 +1179,10 @@ def convert_annotation_tf_record(image_dir: str, annotations_dir: str, download_
         f'in_format: {annotation_format} need to string or LocalisationAnnotation.'
 
     if isinstance(annotation_format, str):
-        annotation_format = LocalisationAnnotationFormats.get(annotation_format)
+        annotation_format = LocalisationAnnotation(annotation_format)
 
     annotation_format.create_tfrecord(image_dir, annotations_dir, download_dir, num_shard, shard_splits,
                                       split_names, class_map)
+
+
+convert_annotation_format = dataset_utils.annotation_format_converter(LocalisationAnnotation)
