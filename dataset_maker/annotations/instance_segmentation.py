@@ -170,11 +170,12 @@ class VGG(InstanceSegmentationAnnotation):
                 regions = regions.values()
 
             for r in regions:
-                xs, ys = r['shape_attributes']['all_points_x'], r['shape_attributes']['all_points_y']
-                bbox = utils.bbox(xs, ys)
-                bboxes_per.append(np.asarray(bbox))
-                poly_per.append((xs, ys))
-                classes_per.append(r['region_attributes'][region_label])
+                if region_label in r['region_attributes']:
+                    xs, ys = r['shape_attributes']['all_points_x'], r['shape_attributes']['all_points_y']
+                    bbox = utils.bbox(xs, ys)
+                    bboxes_per.append(np.asarray(bbox))
+                    poly_per.append((xs, ys))
+                    classes_per.append(r['region_attributes'][region_label])
             bboxes.append(np.asarray(bboxes_per))
             polygons.append(np.asarray(poly_per))
             classes.append(np.asarray(classes_per))

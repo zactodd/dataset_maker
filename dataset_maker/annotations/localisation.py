@@ -179,9 +179,10 @@ class VGG(LocalisationAnnotation):
                 regions = regions.values()
 
             for r in regions:
-                bbox = utils.bbox(r['shape_attributes']['all_points_x'], r['shape_attributes']['all_points_y'])
-                bboxes_per.append(np.asarray(bbox))
-                classes_per.append(r['region_attributes'][region_label])
+                if region_label in r['region_attributes']:
+                    bbox = utils.bbox(r['shape_attributes']['all_points_x'], r['shape_attributes']['all_points_y'])
+                    bboxes_per.append(np.asarray(bbox))
+                    classes_per.append(r['region_attributes'][region_label])
             bboxes.append(np.asarray(bboxes_per))
             classes.append(np.asarray(classes_per))
         return names, images, bboxes, classes
